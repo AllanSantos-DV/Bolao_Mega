@@ -256,7 +256,7 @@
         // Configurar o botão de download da planilha
         document.getElementById('baixarPlanilha').addEventListener('click', () => {
             const link = document.createElement('a');
-            link.href = '/planilhas/jogos.xlsx';
+            link.href = `${window.location.origin}/planilhas/jogos.xlsx`; // Caminho dinâmico
             link.download = 'jogos.xlsx';
             link.click();
         });

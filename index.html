@@ -92,18 +92,10 @@
         .comprovantes button {
             margin: 5px;
         }
-        .pdf-viewer {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .pdf-viewer iframe {
-            width: 100%;
-            height: 500px;
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        .total-jogos {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            color: #ffcc00;
         }
     </style>
 </head>
@@ -113,9 +105,10 @@
         <div class="countdown" id="countdown">Contagem regressiva: 00d 00h 00m 00s</div>
         <button id="baixarPlanilha">Baixar Planilha de Jogos</button>
         
-        <!-- Botão para exibir comprovantes -->
+        <!-- Botão para exibir comprovantes e total de jogos -->
         <div class="comprovantes">
             <button id="exibirComprovantes">Exibir Comprovantes</button>
+            <div class="total-jogos" id="totalJogos">Total de Jogos: 0</div>
         </div>
 
         <div class="concurso-info hidden" id="concursoInfo">
@@ -127,17 +120,6 @@
             <p id="quadras">0 quadras (4 Acertos)</p>
             <p id="quinas">0 quinas (5 Acertos)</p>
             <p id="senas">0 senas (6 Acertos)</p>
-        </div>
-    </div>
-
-    <!-- Janela adicional para exibir os PDFs -->
-    <div id="pdfWindow" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 1000; padding: 20px; box-sizing: border-box;">
-        <button onclick="fecharJanelaPDF()" style="position: absolute; top: 20px; right: 20px; background-color: #ff0000; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Fechar</button>
-        <div class="pdf-viewer">
-            <iframe src="comprovantes/Parte1.pdf"></iframe>
-            <iframe src="comprovantes/Parte2.pdf"></iframe>
-            <iframe src="comprovantes/Parte3.pdf"></iframe>
-            <iframe src="comprovantes/Parte4.pdf"></iframe>
         </div>
     </div>
 
@@ -245,6 +227,53 @@
             return { quadras, quinas, senas };
         }
 
+        // Função para exibir o total de jogos
+        function exibirTotalJogos(jogos) {
+            const totalJogos = jogos.length - 1; // Desconsidera o cabeçalho
+            document.getElementById('totalJogos').textContent = `Total de Jogos: ${totalJogos}`;
+        }
+
+        // Função para abrir os 4 PDFs em uma nova guia
+        function abrirComprovantes() {
+            const pdfs = [
+                'comprovantes/Parte1.pdf',
+                'comprovantes/Parte2.pdf',
+                'comprovantes/Parte3.pdf',
+                'comprovantes/Parte4.pdf'
+            ];
+
+            // Cria uma nova guia com todos os PDFs
+            const novaGuia = window.open();
+            novaGuia.document.write(`
+                <html>
+                    <head>
+                        <title>Comprovantes</title>
+                        <style>
+                            body {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                gap: 20px;
+                                padding: 20px;
+                                background-color: #f0f0f0;
+                            }
+                            iframe {
+                                width: 100%;
+                                height: 500px;
+                                border: none;
+                                border-radius: 8px;
+                                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${pdfs.map(pdf => `<iframe src="${pdf}"></iframe>`).join('')}
+                    </body>
+                </html>
+            `);
+            novaGuia.document.close();
+        }
+
         // Função para processar as planilhas e exibir os resultados
         async function processarPlanilhas() {
             try {
@@ -274,6 +303,9 @@
                     throw new Error('Erro ao ler a planilha de jogos');
                 }
 
+                // Exibir o total de jogos
+                exibirTotalJogos(jogos);
+
                 // Log dos números sorteados e dos jogos para depuração
                 console.log('Números sorteados:', resultado.numeros);
                 console.log('Jogos:', jogos);
@@ -295,16 +327,6 @@
             }
         }
 
-        // Função para abrir a janela de PDFs
-        function abrirJanelaPDF() {
-            document.getElementById('pdfWindow').classList.remove('hidden');
-        }
-
-        // Função para fechar a janela de PDFs
-        function fecharJanelaPDF() {
-            document.getElementById('pdfWindow').classList.add('hidden');
-        }
-
         // Configurar o botão de download da planilha
         document.getElementById('baixarPlanilha').addEventListener('click', () => {
             const link = document.createElement('a');
@@ -314,7 +336,7 @@
         });
 
         // Configurar o botão de exibir comprovantes
-        document.getElementById('exibirComprovantes').addEventListener('click', abrirJanelaPDF);
+        document.getElementById('exibirComprovantes').addEventListener('click', abrirComprovantes);
 
         // Iniciar a contagem regressiva e o processamento ao carregar a página
         window.onload = async () => {

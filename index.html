@@ -65,19 +65,19 @@
     <div class="container">
         <h1>Bolão do Paulão</h1>
         <div class="countdown" id="countdown">Contagem regressiva: 00d 00h 00m 00s</div>
-        <button onclick="window.location.href='/planilhas/jogos.xlsx'">Baixar Planilha de Jogos</button>
+        <button onclick="window.location.href='planilhas/jogos.xlsx'">Baixar Planilha de Jogos</button>
         
         <div class="resultados hidden" id="resultados">
-            <p id="quadras">38 quadras (4 Acertos)</p>
-            <p id="quinas">50 quinas (5 Acertos)</p>
-            <p id="senas">2 senas (6 Acertos)</p>
+            <p id="quadras">0 quadras (4 Acertos)</p>
+            <p id="quinas">0 quinas (5 Acertos)</p>
+            <p id="senas">0 senas (6 Acertos)</p>
         </div>
     </div>
 
     <script>
         // Função para atualizar a contagem regressiva
         function atualizarContagemRegressiva() {
-            const dataFinal = new Date('2024-12-31T23:59:59').getTime(); // Defina a data e hora final aqui
+            const dataFinal = new Date('2023-12-31T23:59:59').getTime(); // Defina a data e hora final aqui
             const agora = new Date().getTime();
             const diferenca = dataFinal - agora;
 
@@ -115,6 +115,9 @@
                     const workbook = XLSX.read(data, {type: 'array'});
                     const jogos = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
                     
+                    // Remover o cabeçalho da planilha de jogos
+                    jogos.shift();
+
                     readerResultado.onload = function(e) {
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, {type: 'array'});

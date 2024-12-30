@@ -136,7 +136,7 @@
         // Função para ler o resultado do arquivo de texto
         async function lerResultado() {
             try {
-                const response = await fetch('planilhas/resultado.txt');
+                const response = await fetch('/planilhas/resultado.txt');
                 if (!response.ok) {
                     throw new Error('Arquivo de resultado não encontrado');
                 }
@@ -167,7 +167,7 @@
         // Função para listar arquivos na pasta planilhas e encontrar o arquivo .xlsx
         async function encontrarPlanilha() {
             try {
-                const response = await fetch('planilhas/');
+                const response = await fetch('/planilhas/');
                 if (!response.ok) {
                     throw new Error('Erro ao listar arquivos na pasta planilhas');
                 }

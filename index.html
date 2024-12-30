@@ -138,7 +138,7 @@
         // Função para ler o resultado do arquivo de texto
         async function lerResultado() {
             try {
-                const response = await fetch('/planilhas/resultado.txt');
+                const response = await fetch('planilhas/resultado.txt'); // Caminho relativo
                 if (!response.ok) {
                     throw new Error('Arquivo de resultado não encontrado');
                 }
@@ -170,7 +170,7 @@
         // Função para ler a planilha de jogos
         async function lerPlanilhaJogos() {
             try {
-                const response = await fetch('/planilhas/jogos.xlsx');
+                const response = await fetch('planilhas/jogos.xlsx'); // Caminho relativo
                 const blob = await response.blob();
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -256,7 +256,7 @@
         // Configurar o botão de download da planilha
         document.getElementById('baixarPlanilha').addEventListener('click', () => {
             const link = document.createElement('a');
-            link.href = `${window.location.origin}/planilhas/jogos.xlsx`; // Caminho dinâmico
+            link.href = 'planilhas/jogos.xlsx'; // Caminho relativo
             link.download = 'jogos.xlsx';
             link.click();
         });

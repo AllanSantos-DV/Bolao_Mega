@@ -170,7 +170,7 @@
         // Função para listar arquivos na pasta planilhas e encontrar o arquivo .xlsx
         async function encontrarPlanilha() {
             try {
-                const response = await fetch('/planilhas');
+                const response = await fetch('/planilhas/');
                 console.log(response);
                 if (!response.ok) {
                     throw new Error('Erro ao listar arquivos na pasta planilhas');
@@ -293,7 +293,7 @@
             if (nomePlanilha) {
                 console.log('Planilha encontrada:', nomePlanilha);
                 // Configurar o botão de download para usar o nome da planilha encontrado
-                document.getElementById('baixarPlanilha').onclick = () => window.location.href = `planilhas/${nomePlanilha}`;
+                document.getElementById('baixarPlanilha').onclick = () => window.location.href = `/planilhas/${nomePlanilha}`;
                 
                 // Processar as planilhas usando o nome encontrado
                 await processarPlanilhas();

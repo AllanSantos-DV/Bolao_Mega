@@ -43,6 +43,33 @@
             margin: 10px 0;
             color: #00ff00;
         }
+        .concurso-info {
+            margin-bottom: 20px;
+        }
+        .concurso-info h2 {
+            font-size: 2rem;
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+        .numeros-sorteados {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .numeros-sorteados span {
+            display: inline-block;
+            padding: 15px;
+            font-size: 1.5rem;
+            background-color: #007BFF;
+            color: #ffffff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        }
         button {
             padding: 10px 20px;
             font-size: 1rem;
@@ -67,6 +94,11 @@
         <div class="countdown" id="countdown">Contagem regressiva: 00d 00h 00m 00s</div>
         <button id="baixarPlanilha">Baixar Planilha de Jogos</button>
         
+        <div class="concurso-info hidden" id="concursoInfo">
+            <h2>Resultado do Concurso <span id="numeroConcurso"></span></h2>
+            <div class="numeros-sorteados" id="numerosSorteados"></div>
+        </div>
+
         <div class="resultados hidden" id="resultados">
             <p id="quadras">0 quadras (4 Acertos)</p>
             <p id="quinas">0 quinas (5 Acertos)</p>
@@ -101,81 +133,78 @@
             return match ? match[1] : null;
         }
 
-        // Função para buscar o resultado da Mega-Sena
-        async function buscarResultado(concurso) {
+        // Função para ler o resultado do arquivo de texto
+        async function lerResultado() {
             try {
-                const response = await fetch('https://loterias.caixa.gov.br/Paginas/Mega-Sena.aspx');
-                const text = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-
-                // Preencher o campo de busca com o número do concurso
-                const inputBusca = doc.querySelector('input#buscaConcurso');
-                if (inputBusca) {
-                    inputBusca.value = concurso;
-
-                    // Simular o evento de busca (pode não funcionar devido a restrições de segurança)
-                    const evento = new KeyboardEvent('keypress', { key: 'Enter' });
-                    inputBusca.dispatchEvent(evento);
+                const response = await fetch('planilhas/resultado.txt');
+                if (!response.ok) {
+                    throw new Error('Arquivo de resultado não encontrado');
                 }
-
-                // Aguardar um tempo para a página carregar o resultado (simulação)
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                // Extrair os números do resultado
-                const numerosElement = doc.querySelectorAll('ul.numbers.megasena li.ng-binding');
-                if (numerosElement.length === 0) {
-                    throw new Error('Resultado não encontrado');
+                const texto = await response.text();
+                if (!texto.trim()) {
+                    return null; // Retorna null se o arquivo estiver vazio
                 }
-
-                const numeros = Array.from(numerosElement).map(li => parseInt(li.textContent.trim(), 10));
-
-                return { numeros };
+                const numeros = texto.trim().split('-').map(num => parseInt(num, 10));
+                return numeros;
             } catch (error) {
-                console.error('Erro ao buscar o resultado:', error);
+                console.error('Erro ao ler o arquivo de resultado:', error);
                 return null;
             }
         }
 
-        // Função para ler e processar as planilhas
-        async function processarPlanilhas(nomePlanilha) {
+        // Função para exibir o número do concurso e os números sorteados
+        function exibirResultado(concurso, numeros) {
+            const numeroConcursoElement = document.getElementById('numeroConcurso');
+            const numerosSorteadosElement = document.getElementById('numerosSorteados');
+
+            numeroConcursoElement.textContent = concurso;
+            numerosSorteadosElement.innerHTML = numeros.map(num => `<span>${num.toString().padStart(2, '0')}</span>`).join('');
+
+            document.getElementById('concursoInfo').classList.remove('hidden');
+            document.getElementById('countdown').classList.add('hidden'); // Remove o contador
+        }
+
+        // Função para listar arquivos na pasta planilhas e encontrar o arquivo .xlsx
+        async function encontrarPlanilha() {
             try {
-                const concurso = extrairNumeroConcurso(nomePlanilha);
-                if (!concurso) {
-                    throw new Error('Número do concurso não encontrado no nome da planilha');
+                const response = await fetch('planilhas/');
+                if (!response.ok) {
+                    throw new Error('Erro ao listar arquivos na pasta planilhas');
                 }
-
-                const resultado = await buscarResultado(concurso);
-                if (!resultado) {
-                    throw new Error('Não foi possível obter o resultado');
-                }
-
-                const responseJogos = await fetch(`planilhas/${nomePlanilha}`);
-                const blobJogos = await responseJogos.blob();
-                
-                const readerJogos = new FileReader();
-                
-                readerJogos.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const jogos = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-                    
-                    // Remover o cabeçalho da planilha de jogos
-                    jogos.shift();
-
-                    // Calcular acertos
-                    const acertos = calcularAcertos(jogos, resultado.numeros);
-                    
-                    // Mostrar resultados
-                    document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
-                    document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
-                    document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
-                    document.getElementById('resultados').classList.remove('hidden');
-                };
-                readerJogos.readAsArrayBuffer(blobJogos);
+                const text = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const links = Array.from(doc.querySelectorAll('a'))
+                    .map(link => link.getAttribute('href'))
+                    .filter(href => href.endsWith('.xlsx'));
+                return links.length > 0 ? links[0] : null;
             } catch (error) {
-                console.error(error.message);
-                document.getElementById('resultados').classList.add('hidden');
+                console.error('Erro ao encontrar a planilha:', error);
+                return null;
+            }
+        }
+
+        // Função para ler a planilha de jogos
+        async function lerPlanilhaJogos(nomePlanilha) {
+            try {
+                const response = await fetch(`planilhas/${nomePlanilha}`);
+                const blob = await response.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const jogos = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                        resolve(jogos);
+                    };
+                    reader.onerror = function(e) {
+                        reject(new Error('Erro ao ler a planilha de jogos'));
+                    };
+                    reader.readAsArrayBuffer(blob);
+                });
+            } catch (error) {
+                console.error('Erro ao buscar a planilha de jogos:', error);
+                return null;
             }
         }
 
@@ -195,12 +224,71 @@
             return { quadras, quinas, senas };
         }
 
+        // Função para processar as planilhas e exibir os resultados
+        async function processarPlanilhas() {
+            try {
+                // Encontrar o nome da planilha automaticamente
+                const nomePlanilha = await encontrarPlanilha();
+                if (!nomePlanilha) {
+                    throw new Error('Nenhuma planilha encontrada na pasta planilhas');
+                }
+
+                const concurso = extrairNumeroConcurso(nomePlanilha);
+                if (!concurso) {
+                    throw new Error('Número do concurso não encontrado no nome da planilha');
+                }
+
+                const resultado = await lerResultado();
+                if (!resultado) {
+                    // Se o arquivo de resultado estiver vazio, mantém o contador e o botão
+                    document.getElementById('countdown').classList.remove('hidden');
+                    document.getElementById('baixarPlanilha').classList.remove('hidden');
+                    document.getElementById('concursoInfo').classList.add('hidden');
+                    document.getElementById('resultados').classList.add('hidden');
+                    return;
+                }
+
+                // Exibir o resultado do concurso
+                exibirResultado(concurso, resultado);
+
+                // Ler a planilha de jogos
+                const jogos = await lerPlanilhaJogos(nomePlanilha);
+                if (!jogos) {
+                    throw new Error('Erro ao ler a planilha de jogos');
+                }
+
+                // Remover o cabeçalho da planilha de jogos
+                jogos.shift();
+
+                // Calcular acertos
+                const acertos = calcularAcertos(jogos, resultado);
+
+                // Mostrar resultados
+                document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
+                document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
+                document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
+                document.getElementById('resultados').classList.remove('hidden');
+            } catch (error) {
+                console.error(error.message);
+                document.getElementById('resultados').classList.add('hidden');
+            }
+        }
+
         // Iniciar a contagem regressiva e o processamento ao carregar a página
-        window.onload = () => {
+        window.onload = async () => {
             atualizarContagemRegressiva();
-            const nomePlanilha = 'jogos_2809.xlsx'; // Substitua pelo nome da planilha atual
-            document.getElementById('baixarPlanilha').onclick = () => window.location.href = `planilhas/${nomePlanilha}`;
-            processarPlanilhas(nomePlanilha);
+
+            // Encontrar o nome da planilha automaticamente
+            const nomePlanilha = await encontrarPlanilha();
+            if (nomePlanilha) {
+                // Configurar o botão de download para usar o nome da planilha encontrado
+                document.getElementById('baixarPlanilha').onclick = () => window.location.href = `planilhas/${nomePlanilha}`;
+                
+                // Processar as planilhas usando o nome encontrado
+                processarPlanilhas();
+            } else {
+                console.error('Nenhuma planilha encontrada na pasta planilhas.');
+            }
         };
 
         // Atualizar a contagem regressiva a cada segundo

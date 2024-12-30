@@ -65,7 +65,7 @@
     <div class="container">
         <h1>Bolão do Paulão</h1>
         <div class="countdown" id="countdown">Contagem regressiva: 00d 00h 00m 00s</div>
-        <button onclick="window.location.href='planilhas/jogos.xlsx'">Baixar Planilha de Jogos</button>
+        <button id="baixarPlanilha">Baixar Planilha de Jogos</button>
         
         <div class="resultados hidden" id="resultados">
             <p id="quadras">0 quadras (4 Acertos)</p>
@@ -94,21 +94,66 @@
             }
         }
 
-        // Função para ler e processar as planilhas
-        async function processarPlanilhas() {
+        // Função para extrair o número do concurso do nome da planilha
+        function extrairNumeroConcurso(nomePlanilha) {
+            const regex = /jogos_(\d+)\.xlsx/;
+            const match = nomePlanilha.match(regex);
+            return match ? match[1] : null;
+        }
+
+        // Função para buscar o resultado da Mega-Sena
+        async function buscarResultado(concurso) {
             try {
-                const responseJogos = await fetch('planilhas/jogos.xlsx');
-                const responseResultado = await fetch('planilhas/resultado.xlsx');
-                
-                if (!responseResultado.ok) {
-                    throw new Error('Planilha de resultados não encontrada ou vazia');
+                const response = await fetch('https://loterias.caixa.gov.br/Paginas/Mega-Sena.aspx');
+                const text = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+
+                // Preencher o campo de busca com o número do concurso
+                const inputBusca = doc.querySelector('input#buscaConcurso');
+                if (inputBusca) {
+                    inputBusca.value = concurso;
+
+                    // Simular o evento de busca (pode não funcionar devido a restrições de segurança)
+                    const evento = new KeyboardEvent('keypress', { key: 'Enter' });
+                    inputBusca.dispatchEvent(evento);
                 }
 
+                // Aguardar um tempo para a página carregar o resultado (simulação)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Extrair os números do resultado
+                const numerosElement = doc.querySelectorAll('ul.numbers.megasena li.ng-binding');
+                if (numerosElement.length === 0) {
+                    throw new Error('Resultado não encontrado');
+                }
+
+                const numeros = Array.from(numerosElement).map(li => parseInt(li.textContent.trim(), 10));
+
+                return { numeros };
+            } catch (error) {
+                console.error('Erro ao buscar o resultado:', error);
+                return null;
+            }
+        }
+
+        // Função para ler e processar as planilhas
+        async function processarPlanilhas(nomePlanilha) {
+            try {
+                const concurso = extrairNumeroConcurso(nomePlanilha);
+                if (!concurso) {
+                    throw new Error('Número do concurso não encontrado no nome da planilha');
+                }
+
+                const resultado = await buscarResultado(concurso);
+                if (!resultado) {
+                    throw new Error('Não foi possível obter o resultado');
+                }
+
+                const responseJogos = await fetch(`planilhas/${nomePlanilha}`);
                 const blobJogos = await responseJogos.blob();
-                const blobResultado = await responseResultado.blob();
                 
                 const readerJogos = new FileReader();
-                const readerResultado = new FileReader();
                 
                 readerJogos.onload = function(e) {
                     const data = new Uint8Array(e.target.result);
@@ -118,25 +163,14 @@
                     // Remover o cabeçalho da planilha de jogos
                     jogos.shift();
 
-                    readerResultado.onload = function(e) {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, {type: 'array'});
-                        const resultado = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-                        
-                        if (resultado.length === 0 || resultado[0].length === 0) {
-                            throw new Error('Planilha de resultados vazia');
-                        }
-
-                        // Calcular acertos
-                        const acertos = calcularAcertos(jogos, resultado[0]);
-                        
-                        // Mostrar resultados
-                        document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
-                        document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
-                        document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
-                        document.getElementById('resultados').classList.remove('hidden');
-                    };
-                    readerResultado.readAsArrayBuffer(blobResultado);
+                    // Calcular acertos
+                    const acertos = calcularAcertos(jogos, resultado.numeros);
+                    
+                    // Mostrar resultados
+                    document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
+                    document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
+                    document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
+                    document.getElementById('resultados').classList.remove('hidden');
                 };
                 readerJogos.readAsArrayBuffer(blobJogos);
             } catch (error) {
@@ -164,7 +198,9 @@
         // Iniciar a contagem regressiva e o processamento ao carregar a página
         window.onload = () => {
             atualizarContagemRegressiva();
-            processarPlanilhas();
+            const nomePlanilha = 'jogos_2809.xlsx'; // Substitua pelo nome da planilha atual
+            document.getElementById('baixarPlanilha').onclick = () => window.location.href = `planilhas/${nomePlanilha}`;
+            processarPlanilhas(nomePlanilha);
         };
 
         // Atualizar a contagem regressiva a cada segundo

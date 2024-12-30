@@ -86,6 +86,12 @@
         .hidden {
             display: none;
         }
+        .comprovantes {
+            margin-top: 20px;
+        }
+        .comprovantes button {
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
@@ -94,6 +100,11 @@
         <div class="countdown" id="countdown">Contagem regressiva: 00d 00h 00m 00s</div>
         <button id="baixarPlanilha">Baixar Planilha de Jogos</button>
         
+        <!-- Botão para exibir comprovantes -->
+        <div class="comprovantes">
+            <button id="exibirComprovantes">Exibir Comprovantes</button>
+        </div>
+
         <div class="concurso-info hidden" id="concursoInfo">
             <h2>Resultado do Concurso <span id="numeroConcurso"></span></h2>
             <div class="numeros-sorteados" id="numerosSorteados"></div>
@@ -138,7 +149,7 @@
         // Função para ler o resultado do arquivo de texto
         async function lerResultado() {
             try {
-                const response = await fetch(`planilhas/resultado.txt?v=${Date.now()}`); // Adiciona um timestamp
+                const response = await fetch(`planilha/resultado.txt?v=${Date.now()}`); // Adiciona um timestamp
                 if (!response.ok) {
                     throw new Error('Arquivo de resultado não encontrado');
                 }
@@ -170,7 +181,7 @@
         // Função para ler a planilha de jogos
         async function lerPlanilhaJogos() {
             try {
-                const response = await fetch(`planilhas/jogos.xlsx?v=${Date.now()}`); // Adiciona um timestamp
+                const response = await fetch(`planilha/jogos.xlsx?v=${Date.now()}`); // Adiciona um timestamp
                 const blob = await response.blob();
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -260,13 +271,30 @@
             }
         }
 
+        // Função para abrir os comprovantes em PDF
+        function exibirComprovantes() {
+            const pdfs = [
+                'comprovantes/Parte1.pdf',
+                'comprovantes/Parte2.pdf',
+                'comprovantes/Parte3.pdf',
+                'comprovantes/Parte4.pdf'
+            ];
+
+            pdfs.forEach(pdf => {
+                window.open(pdf, '_blank'); // Abre cada PDF em uma nova aba
+            });
+        }
+
         // Configurar o botão de download da planilha
         document.getElementById('baixarPlanilha').addEventListener('click', () => {
             const link = document.createElement('a');
-            link.href = 'planilhas/jogos.xlsx'; // Caminho relativo
+            link.href = 'planilha/jogos.xlsx'; // Caminho relativo
             link.download = 'jogos.xlsx';
             link.click();
         });
+
+        // Configurar o botão de exibir comprovantes
+        document.getElementById('exibirComprovantes').addEventListener('click', exibirComprovantes);
 
         // Iniciar a contagem regressiva e o processamento ao carregar a página
         window.onload = async () => {

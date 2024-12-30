@@ -92,6 +92,19 @@
         .comprovantes button {
             margin: 5px;
         }
+        .pdf-viewer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pdf-viewer iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -114,6 +127,17 @@
             <p id="quadras">0 quadras (4 Acertos)</p>
             <p id="quinas">0 quinas (5 Acertos)</p>
             <p id="senas">0 senas (6 Acertos)</p>
+        </div>
+    </div>
+
+    <!-- Janela adicional para exibir os PDFs -->
+    <div id="pdfWindow" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 1000; padding: 20px; box-sizing: border-box;">
+        <button onclick="fecharJanelaPDF()" style="position: absolute; top: 20px; right: 20px; background-color: #ff0000; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Fechar</button>
+        <div class="pdf-viewer">
+            <iframe src="comprovantes/Parte1.pdf"></iframe>
+            <iframe src="comprovantes/Parte2.pdf"></iframe>
+            <iframe src="comprovantes/Parte3.pdf"></iframe>
+            <iframe src="comprovantes/Parte4.pdf"></iframe>
         </div>
     </div>
 
@@ -271,18 +295,14 @@
             }
         }
 
-        // Função para abrir os comprovantes em PDF
-        function exibirComprovantes() {
-            const pdfs = [
-                'comprovantes/Parte1.pdf',
-                'comprovantes/Parte2.pdf',
-                'comprovantes/Parte3.pdf',
-                'comprovantes/Parte4.pdf'
-            ];
+        // Função para abrir a janela de PDFs
+        function abrirJanelaPDF() {
+            document.getElementById('pdfWindow').classList.remove('hidden');
+        }
 
-            pdfs.forEach(pdf => {
-                window.open(pdf, '_blank'); // Abre cada PDF em uma nova aba
-            });
+        // Função para fechar a janela de PDFs
+        function fecharJanelaPDF() {
+            document.getElementById('pdfWindow').classList.add('hidden');
         }
 
         // Configurar o botão de download da planilha
@@ -294,7 +314,7 @@
         });
 
         // Configurar o botão de exibir comprovantes
-        document.getElementById('exibirComprovantes').addEventListener('click', exibirComprovantes);
+        document.getElementById('exibirComprovantes').addEventListener('click', abrirJanelaPDF);
 
         // Iniciar a contagem regressiva e o processamento ao carregar a página
         window.onload = async () => {

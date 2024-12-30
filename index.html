@@ -199,6 +199,7 @@
 
             jogos.forEach(jogo => {
                 let acertos = jogo.filter(numero => resultado.includes(numero)).length;
+                console.log('Acertos:', acertos, 'Números:', jogo, 'Resultado:', resultado);
                 if (acertos === 4) quadras++;
                 if (acertos === 5) quinas++;
                 if (acertos === 6) senas++;
@@ -241,6 +242,9 @@
 
                 // Calcular acertos
                 const acertos = calcularAcertos(jogos, resultado.numeros);
+
+                // Log dos acertos para depuração
+                console.log('Acertos:', acertos);
 
                 // Mostrar resultados
                 document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão do Paulão</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #007BFF;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        .countdown {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #ffcc00;
+        }
+        .resultados {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .resultados p {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            color: #00ff00;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bolão do Paulão</h1>
+        <div class="countdown" id="countdown">Contagem regressiva: 00d 00h 00m 00s</div>
+        <button onclick="window.location.href='/planilhas/jogos.xlsx'">Baixar Planilha de Jogos</button>
+        
+        <div class="resultados hidden" id="resultados">
+            <p id="quadras">38 quadras (4 Acertos)</p>
+            <p id="quinas">50 quinas (5 Acertos)</p>
+            <p id="senas">2 senas (6 Acertos)</p>
+        </div>
+    </div>
+
+    <script>
+        // Função para atualizar a contagem regressiva
+        function atualizarContagemRegressiva() {
+            const dataFinal = new Date('2024-12-31T23:59:59').getTime(); // Defina a data e hora final aqui
+            const agora = new Date().getTime();
+            const diferenca = dataFinal - agora;
+
+            const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
+            const horas = Math.floor((diferenca % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
+            const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
+
+            document.getElementById('countdown').textContent = `Contagem regressiva: ${dias}d ${horas}h ${minutos}m ${segundos}s`;
+
+            if (diferenca <= 0) {
+                clearInterval(intervalo);
+                document.getElementById('countdown').textContent = 'Tempo esgotado!';
+            }
+        }
+
+        // Função para ler e processar as planilhas
+        async function processarPlanilhas() {
+            try {
+                const responseJogos = await fetch('planilhas/jogos.xlsx');
+                const responseResultado = await fetch('planilhas/resultado.xlsx');
+                
+                if (!responseResultado.ok) {
+                    throw new Error('Planilha de resultados não encontrada ou vazia');
+                }
+
+                const blobJogos = await responseJogos.blob();
+                const blobResultado = await responseResultado.blob();
+                
+                const readerJogos = new FileReader();
+                const readerResultado = new FileReader();
+                
+                readerJogos.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const jogos = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                    
+                    readerResultado.onload = function(e) {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const resultado = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                        
+                        if (resultado.length === 0 || resultado[0].length === 0) {
+                            throw new Error('Planilha de resultados vazia');
+                        }
+
+                        // Calcular acertos
+                        const acertos = calcularAcertos(jogos, resultado[0]);
+                        
+                        // Mostrar resultados
+                        document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
+                        document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
+                        document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
+                        document.getElementById('resultados').classList.remove('hidden');
+                    };
+                    readerResultado.readAsArrayBuffer(blobResultado);
+                };
+                readerJogos.readAsArrayBuffer(blobJogos);
+            } catch (error) {
+                console.error(error.message);
+                document.getElementById('resultados').classList.add('hidden');
+            }
+        }
+
+        // Função para calcular os acertos
+        function calcularAcertos(jogos, resultado) {
+            let quadras = 0;
+            let quinas = 0;
+            let senas = 0;
+
+            jogos.forEach(jogo => {
+                let acertos = jogo.filter(numero => resultado.includes(numero)).length;
+                if (acertos === 4) quadras++;
+                if (acertos === 5) quinas++;
+                if (acertos === 6) senas++;
+            });
+
+            return { quadras, quinas, senas };
+        }
+
+        // Iniciar a contagem regressiva e o processamento ao carregar a página
+        window.onload = () => {
+            atualizarContagemRegressiva();
+            processarPlanilhas();
+        };
+
+        // Atualizar a contagem regressiva a cada segundo
+        const intervalo = setInterval(atualizarContagemRegressiva, 1000);
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+</body>
+</html>

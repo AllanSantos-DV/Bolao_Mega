@@ -107,6 +107,9 @@
     </div>
 
     <script>
+        // Variável para armazenar o conteúdo anterior do arquivo resultado.txt
+        let resultadoAnterior = null;
+
         // Função para atualizar a contagem regressiva
         function atualizarContagemRegressiva() {
             const dataFinal = new Date('2024-12-31T23:59:59').getTime();
@@ -187,7 +190,7 @@
         // Função para ler a planilha de jogos
         async function lerPlanilhaJogos(nomePlanilha) {
             try {
-                const response = await fetch(`${nomePlanilha}`);
+                const response = await fetch(`planilhas/${nomePlanilha}`);
                 const blob = await response.blob();
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -248,6 +251,12 @@
                     return;
                 }
 
+                // Verificar se o resultado foi alterado
+                if (JSON.stringify(resultado) === JSON.stringify(resultadoAnterior)) {
+                    return; // Não fazer nada se o resultado não mudou
+                }
+                resultadoAnterior = resultado;
+
                 // Exibir o resultado do concurso
                 exibirResultado(concurso, resultado);
 
@@ -281,14 +290,21 @@
             // Encontrar o nome da planilha automaticamente
             const nomePlanilha = await encontrarPlanilha();
             if (nomePlanilha) {
+                console.log('Planilha encontrada:', nomePlanilha);
                 // Configurar o botão de download para usar o nome da planilha encontrado
                 document.getElementById('baixarPlanilha').onclick = () => window.location.href = `${nomePlanilha}`;
                 
                 // Processar as planilhas usando o nome encontrado
-                processarPlanilhas();
+                await processarPlanilhas();
             } else {
+                console.log(nomePlanilha);
                 console.error('Nenhuma planilha encontrada na pasta planilhas.');
             }
+
+            // Verificar alterações no arquivo resultado.txt a cada 5 segundos
+            setInterval(async () => {
+                await processarPlanilhas();
+            }, 5000);
         };
 
         // Atualizar a contagem regressiva a cada segundo

@@ -138,7 +138,7 @@
         // Função para ler o resultado do arquivo de texto
         async function lerResultado() {
             try {
-                const response = await fetch('planilhas/resultado.txt'); // Caminho relativo
+                const response = await fetch(`planilhas/resultado.txt?v=${Date.now()}`); // Adiciona um timestamp
                 if (!response.ok) {
                     throw new Error('Arquivo de resultado não encontrado');
                 }
@@ -170,7 +170,7 @@
         // Função para ler a planilha de jogos
         async function lerPlanilhaJogos() {
             try {
-                const response = await fetch('planilhas/jogos.xlsx'); // Caminho relativo
+                const response = await fetch(`planilhas/jogos.xlsx?v=${Date.now()}`); // Adiciona um timestamp
                 const blob = await response.blob();
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -197,13 +197,15 @@
             let quinas = 0;
             let senas = 0;
 
-            jogos.forEach(jogo => {
-                let acertos = jogo.filter(numero => resultado.includes(numero)).length;
-                console.log('Acertos:', acertos, 'Números:', jogo, 'Resultado:', resultado);
+            // Ignora o cabeçalho (primeira linha)
+            for (let i = 1; i < jogos.length; i++) {
+                const jogo = jogos[i];
+                const numerosJogo = jogo.map(num => parseInt(num, 10)); // Converte para números inteiros
+                let acertos = numerosJogo.filter(numero => resultado.includes(numero)).length;
                 if (acertos === 4) quadras++;
                 if (acertos === 5) quinas++;
                 if (acertos === 6) senas++;
-            });
+            }
 
             return { quadras, quinas, senas };
         }
@@ -237,8 +239,9 @@
                     throw new Error('Erro ao ler a planilha de jogos');
                 }
 
-                // Remover o cabeçalho da planilha de jogos
-                jogos.shift();
+                // Log dos números sorteados e dos jogos para depuração
+                console.log('Números sorteados:', resultado.numeros);
+                console.log('Jogos:', jogos);
 
                 // Calcular acertos
                 const acertos = calcularAcertos(jogos, resultado.numeros);

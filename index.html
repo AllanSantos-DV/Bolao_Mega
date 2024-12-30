@@ -163,8 +163,9 @@
                 if (!texto.trim()) {
                     return null; // Retorna null se o arquivo estiver vazio
                 }
-                const numeros = texto.trim().split('-').slice(1).map(num => parseInt(num, 10));
-                const concurso = extrairNumeroConcurso(texto);
+                const partes = texto.trim().split('-');
+                const concurso = partes[0];
+                const numeros = partes.length > 1 ? partes.slice(1).map(num => parseInt(num, 10)) : null;
                 return { concurso, numeros };
             } catch (error) {
                 console.error('Erro ao ler o arquivo de resultado:', error);
@@ -178,7 +179,11 @@
             const numerosSorteadosElement = document.getElementById('numerosSorteados');
 
             numeroConcursoElement.textContent = concurso;
-            numerosSorteadosElement.innerHTML = numeros.map(num => `<span>${num.toString().padStart(2, '0')}</span>`).join('');
+            if (numeros) {
+                numerosSorteadosElement.innerHTML = numeros.map(num => `<span>${num.toString().padStart(2, '0')}</span>`).join('');
+            } else {
+                numerosSorteadosElement.innerHTML = ''; // Limpa os números sorteados
+            }
 
             document.getElementById('concursoInfo').classList.remove('hidden');
             document.getElementById('countdown').classList.add('hidden'); // Remove o contador
@@ -294,7 +299,7 @@
                 }
                 resultadoAnterior = resultado;
 
-                // Exibir o resultado do concurso
+                // Exibir o número do concurso
                 exibirResultado(resultado.concurso, resultado.numeros);
 
                 // Ler a planilha de jogos
@@ -306,21 +311,18 @@
                 // Exibir o total de jogos
                 exibirTotalJogos(jogos);
 
-                // Log dos números sorteados e dos jogos para depuração
-                console.log('Números sorteados:', resultado.numeros);
-                console.log('Jogos:', jogos);
-
-                // Calcular acertos
-                const acertos = calcularAcertos(jogos, resultado.numeros);
-
-                // Log dos acertos para depuração
-                console.log('Acertos:', acertos);
-
-                // Mostrar resultados
-                document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
-                document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
-                document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
-                document.getElementById('resultados').classList.remove('hidden');
+                // Se houver números sorteados, calcular e exibir os acertos
+                if (resultado.numeros) {
+                    const acertos = calcularAcertos(jogos, resultado.numeros);
+                    document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
+                    document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
+                    document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
+                    document.getElementById('resultados').classList.remove('hidden');
+                } else {
+                    // Se não houver números sorteados, ocultar os acertos
+                    document.getElementById('resultados').classList.add('hidden');
+                    document.getElementById('concursoInfo').classList.add('hidden');
+                }
             } catch (error) {
                 console.error(error.message);
                 document.getElementById('resultados').classList.add('hidden');

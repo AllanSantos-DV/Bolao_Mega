@@ -41,7 +41,6 @@
         .resultados p {
             font-size: 1.2rem;
             margin: 10px 0;
-            color: #00ff00;
         }
         .concurso-info {
             margin-bottom: 20px;
@@ -97,6 +96,9 @@
             font-size: 1.2rem;
             color: #ffcc00;
         }
+        #ternos, #duques {
+            color: red; /* Cor vermelha para ternos e duques */
+        }
     </style>
 </head>
 <body>
@@ -120,6 +122,8 @@
             <p id="quadras">0 quadras (4 Acertos)</p>
             <p id="quinas">0 quinas (5 Acertos)</p>
             <p id="senas">0 senas (6 Acertos)</p>
+            <p id="ternos">0 ternos (3 Acertos)</p>
+            <p id="duques">0 duques (2 Acertos)</p>
         </div>
     </div>
 
@@ -218,18 +222,22 @@
             let quadras = 0;
             let quinas = 0;
             let senas = 0;
+            let ternos = 0;
+            let duques = 0;
 
             // Ignora o cabeçalho (primeira linha)
             for (let i = 1; i < jogos.length; i++) {
                 const jogo = jogos[i];
                 const numerosJogo = jogo.map(num => parseInt(num, 10)); // Converte para números inteiros
                 let acertos = numerosJogo.filter(numero => resultado.includes(numero)).length;
+                if (acertos === 2) duques++;
+                if (acertos === 3) ternos++;
                 if (acertos === 4) quadras++;
                 if (acertos === 5) quinas++;
                 if (acertos === 6) senas++;
             }
 
-            return { quadras, quinas, senas };
+            return { quadras, quinas, senas, ternos, duques };
         }
 
         // Função para exibir o total de jogos
@@ -317,6 +325,8 @@
                     document.getElementById('quadras').textContent = `${acertos.quadras} quadras (4 Acertos)`;
                     document.getElementById('quinas').textContent = `${acertos.quinas} quinas (5 Acertos)`;
                     document.getElementById('senas').textContent = `${acertos.senas} senas (6 Acertos)`;
+                    document.getElementById('ternos').textContent = `${acertos.ternos} ternos (3 Acertos)`;
+                    document.getElementById('duques').textContent = `${acertos.duques} duques (2 Acertos)`;
                     document.getElementById('resultados').classList.remove('hidden');
                 } else {
                     // Se não houver números sorteados, ocultar os acertos

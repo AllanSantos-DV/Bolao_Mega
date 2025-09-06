@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Bolão - Carregando...</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .info {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .info-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item .label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .info-item .value {
+            color: #333;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+
+        .downloads-section {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .downloads-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 1em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .resultado-section {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .resultado-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .status-resultado {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .numeros-sorteados {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .numero-sorteado {
+            background: #28a745;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .acertos-section {
+            margin-bottom: 30px;
+            display: none;
+            text-align: center;
+        }
+
+        .acertos-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .acertos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .acerto-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #28a745;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .acerto-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .acerto-item.selected {
+            border-color: #28a745;
+            background: #d4edda;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .acerto-item .count {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .acerto-item .desc {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .jogos-section {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .jogos-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .jogos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .jogo-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .jogo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .jogo-numero {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .acertos {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .numeros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .numero-jogo {
+            background: #6c757d;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .numero-jogo.numero-acertado {
+            background: #28a745;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+            }
+            
+            .jogos-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .back-btn {
+                position: static;
+                display: inline-block;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn">← Voltar ao Hub</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1 id="bolao-nome">Carregando...</h1>
+            <div class="info">
+                <span id="modalidade">-</span> - Concurso <span id="concurso">-</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="info-section">
+                <h3>📊 Informações do Bolão</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="label">Modalidade</div>
+                        <div class="value" id="info-modalidade">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Concurso</div>
+                        <div class="value" id="info-concurso">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Total de Cotas</div>
+                        <div class="value" id="total-cotas">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Total de Jogos</div>
+                        <div class="value" id="total-jogos">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Números por Jogo</div>
+                        <div class="value" id="numeros-por-jogo">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Range de Acertos</div>
+                        <div class="value" id="range-acertos">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="downloads-section">
+                <h3>📥 Downloads</h3>
+                <div class="download-buttons">
+                    <a href="#" id="download-planilha" class="btn btn-primary">
+                        📊 Baixar Planilha
+                    </a>
+                    <a href="#" id="download-comprovantes" class="btn btn-secondary">
+                        📄 Comprovantes
+                    </a>
+                </div>
+            </div>
+
+            <div class="resultado-section">
+                <h3>🎯 Resultado do Sorteio</h3>
+                <div class="status-resultado" id="status-resultado">Aguardando resultado...</div>
+                <div class="numeros-sorteados" id="numeros-sorteados"></div>
+            </div>
+
+            <div class="acertos-section" id="acertos-section">
+                <h3>🏆 Contagem de Acertos</h3>
+                <div class="acertos-grid" id="acertos-grid"></div>
+            </div>
+
+            <div class="jogos-section">
+                <h3>🎮 Jogos do Bolão</h3>
+                <div class="loading" id="loading-jogos">Carregando jogos...</div>
+                <div class="jogos-grid" id="jogos-grid" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let BOLAO_ID = null;
+        let LOTERIA = null;
+
+        // Função para extrair parâmetros da URL
+        function extrairParametros() {
+            const urlParams = new URLSearchParams(window.location.search);
+            BOLAO_ID = urlParams.get('bolao');
+            LOTERIA = urlParams.get('loteria');
+            
+            if (!BOLAO_ID || !LOTERIA) {
+                document.querySelector('.content').innerHTML = 
+                    '<div class="error">Parâmetros inválidos. Use: ?loteria=nome&bolao=id</div>';
+                return false;
+            }
+            return true;
+        }
+
+        // Função para carregar configuração
+        async function loadConfig() {
+            try {
+                const response = await fetch(`/${LOTERIA}/config.json`);
+                if (!response.ok) {
+                    throw new Error('Config não encontrado');
+                }
+                
+                const config = await response.json();
+                const bolaoConfig = config.boloes[BOLAO_ID];
+                
+                if (!bolaoConfig) {
+                    throw new Error('Bolão não encontrado no config');
+                }
+                
+                // Atualizar título da página
+                document.getElementById('page-title').textContent = `${bolaoConfig.nome} - ${config.loteria.modalidade}`;
+                document.getElementById('bolao-nome').textContent = bolaoConfig.nome;
+                
+                // Atualizar informações básicas
+                document.getElementById('modalidade').textContent = config.loteria.modalidade;
+                document.getElementById('concurso').textContent = config.loteria.concurso;
+                document.getElementById('info-modalidade').textContent = config.loteria.modalidade;
+                document.getElementById('info-concurso').textContent = config.loteria.concurso;
+                document.getElementById('total-cotas').textContent = bolaoConfig.cotas;
+                document.getElementById('numeros-por-jogo').textContent = config.loteria.numeros_por_jogo;
+                document.getElementById('range-acertos').textContent = 
+                    `${config.loteria.range_acertos.minimo}-${config.loteria.range_acertos.maximo}`;
+                
+                // Configurar downloads
+                document.getElementById('download-planilha').href = `/${LOTERIA}/${bolaoConfig.planilha}`;
+                document.getElementById('download-comprovantes').href = `/comprovantes/index.html?loteria=${LOTERIA}&bolao=${BOLAO_ID}&pasta=${bolaoConfig.comprovantes.pasta}`;
+                
+                return { config, bolaoConfig };
+            } catch (error) {
+                console.error('Erro ao carregar configuração:', error);
+                document.querySelector('.content').innerHTML = 
+                    '<div class="error">Erro ao carregar configuração do bolão</div>';
+                return null;
+            }
+        }
+
+        // Função para carregar resultado
+        async function loadResultado(config) {
+            try {
+                if (config.loteria.resultado && config.loteria.resultado.length > 0) {
+                    displayResultado(config.loteria.resultado);
+                    return config.loteria.resultado;
+                } else {
+                    document.getElementById('status-resultado').textContent = 'Aguardando resultado...';
+                    return null;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar resultado:', error);
+                document.getElementById('status-resultado').textContent = 'Erro ao carregar resultado';
+                return null;
+            }
+        }
+
+        // Função para exibir resultado
+        function displayResultado(numeros) {
+            document.getElementById('status-resultado').textContent = 'Resultado disponível!';
+            
+            const container = document.getElementById('numeros-sorteados');
+            container.innerHTML = '';
+            
+            numeros.forEach(numero => {
+                const div = document.createElement('div');
+                div.className = 'numero-sorteado';
+                div.textContent = numero;
+                container.appendChild(div);
+            });
+        }
+
+        // Função para carregar jogos da planilha
+        async function loadJogos(bolaoConfig) {
+            try {
+                console.log('Tentando carregar planilha:', bolaoConfig.planilha);
+                
+                const response = await fetch(`/${LOTERIA}/${bolaoConfig.planilha}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Planilha não encontrada: ${response.status}`);
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                
+                console.log('Planilhas encontradas:', workbook.SheetNames);
+                
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                console.log('Dados da planilha:', jsonData.length, 'linhas');
+                
+                const jogos = [];
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (row && row.length >= 15) {
+                        const numeros = row.filter(cell => 
+                            typeof cell === 'number' && cell >= 1 && cell <= 25
+                        );
+                        
+                        if (numeros.length === 15) {
+                            jogos.push(numeros);
+                        }
+                    }
+                }
+                
+                console.log('Jogos válidos encontrados:', jogos.length);
+                
+                if (jogos.length === 0) {
+                    throw new Error('Nenhum jogo válido encontrado na planilha');
+                }
+                
+                displayJogos(jogos);
+                document.getElementById('total-jogos').textContent = jogos.length;
+                
+                window.jogosAtuais = jogos;
+                
+            } catch (error) {
+                console.error('Erro ao carregar jogos:', error);
+                
+                const jogosSimulados = [
+                    [2, 3, 4, 6, 7, 8, 10, 11, 15, 16, 17, 18, 22, 23, 25],
+                    [1, 2, 3, 6, 7, 8, 9, 10, 12, 15, 16, 17, 19, 21, 22],
+                    [1, 3, 4, 5, 6, 7, 8, 10, 15, 16, 17, 18, 20, 22, 23],
+                    [2, 4, 5, 7, 9, 11, 13, 14, 16, 18, 19, 21, 23, 24, 25],
+                    [1, 3, 6, 8, 10, 12, 13, 15, 17, 18, 20, 21, 22, 24, 25]
+                ];
+                
+                displayJogos(jogosSimulados);
+                document.getElementById('total-jogos').textContent = jogosSimulados.length;
+                window.jogosAtuais = jogosSimulados;
+                
+                document.getElementById('loading-jogos').innerHTML = 
+                    `<div class="error">Erro ao carregar planilha: ${error.message}. Usando jogos de exemplo.</div>`;
+            }
+        }
+
+        // Função para exibir jogos
+        function displayJogos(jogos) {
+            const container = document.getElementById('jogos-grid');
+            container.innerHTML = '';
+            
+            jogos.forEach((jogo, index) => {
+                const div = document.createElement('div');
+                div.className = 'jogo-item';
+                
+                div.innerHTML = `
+                    <div class="jogo-header">
+                        <span class="jogo-numero">Jogo ${index + 1}</span>
+                        <span class="acertos">- acertos</span>
+                    </div>
+                    <div class="numeros">
+                        ${jogo.map(numero => 
+                            `<div class="numero-jogo">${numero}</div>`
+                        ).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+            
+            document.getElementById('loading-jogos').style.display = 'none';
+            container.style.display = 'grid';
+        }
+
+        // Função para calcular acertos
+        function calcularAcertos(jogos, numerosSorteados) {
+            if (!numerosSorteados) return;
+            
+            console.log('Calculando acertos...');
+            console.log('Jogos:', jogos.length);
+            console.log('Números sorteados:', numerosSorteados);
+            
+            const acertosPorFaixa = {};
+            const faixas = [15, 14, 13, 12, 11];
+            
+            faixas.forEach(faixa => {
+                acertosPorFaixa[faixa] = 0;
+            });
+            
+            jogos.forEach((jogo, index) => {
+                const acertos = jogo.filter(numero => 
+                    numerosSorteados.includes(numero)
+                ).length;
+                
+                if (index < 3) {
+                    console.log(`Jogo ${index + 1}:`, jogo, 'Acertos:', acertos);
+                }
+                
+                if (acertos >= 11) {
+                    acertosPorFaixa[acertos] = (acertosPorFaixa[acertos] || 0) + 1;
+                }
+            });
+            
+            console.log('Acertos por faixa:', acertosPorFaixa);
+            displayAcertos(acertosPorFaixa);
+        }
+
+        // Função para exibir contagem de acertos
+        function displayAcertos(acertosPorFaixa) {
+            const container = document.getElementById('acertos-grid');
+            container.innerHTML = '';
+            
+            Object.entries(acertosPorFaixa)
+                .filter(([faixa, count]) => count > 0)
+                .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                .forEach(([faixa, count]) => {
+                    const div = document.createElement('div');
+                    div.className = 'acerto-item';
+                    div.dataset.faixa = faixa;
+                    
+                    div.innerHTML = `
+                        <div class="count">${count}</div>
+                        <div class="desc">acertos (${faixa} números)</div>
+                    `;
+                    
+                    div.addEventListener('click', () => {
+                        filtrarJogosPorAcertos(parseInt(faixa));
+                    });
+                    
+                    container.appendChild(div);
+                });
+            
+            document.getElementById('acertos-section').style.display = 'block';
+        }
+
+        // Função para filtrar jogos por acertos
+        function filtrarJogosPorAcertos(faixaAcertos) {
+            const acertosItems = document.querySelectorAll('.acerto-item');
+            const jogosItems = document.querySelectorAll('.jogo-item');
+            
+            const itemSelecionado = document.querySelector('.acerto-item.selected');
+            if (itemSelecionado && parseInt(itemSelecionado.dataset.faixa) === faixaAcertos) {
+                itemSelecionado.classList.remove('selected');
+                jogosItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+                return;
+            }
+            
+            acertosItems.forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            const itemClicado = document.querySelector(`[data-faixa="${faixaAcertos}"]`);
+            if (itemClicado) {
+                itemClicado.classList.add('selected');
+            }
+            
+            jogosItems.forEach((item, index) => {
+                if (index < window.jogosAtuais.length) {
+                    const jogo = window.jogosAtuais[index];
+                    const acertos = jogo.filter(numero => 
+                        window.numerosSorteados.includes(numero)
+                    ).length;
+                    
+                    if (acertos === faixaAcertos) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Função para destacar acertos nos jogos
+        function destacarAcertosNosJogos(jogos, numerosSorteados) {
+            const container = document.getElementById('jogos-grid');
+            const jogosItems = container.querySelectorAll('.jogo-item');
+            
+            jogosItems.forEach((item, index) => {
+                if (index < jogos.length) {
+                    const jogo = jogos[index];
+                    const numerosDiv = item.querySelector('.numeros');
+                    const acertosDiv = item.querySelector('.acertos');
+                    
+                    numerosDiv.querySelectorAll('.numero-jogo').forEach(numDiv => {
+                        numDiv.classList.remove('numero-acertado');
+                    });
+                    
+                    const acertos = jogo.filter(numero => 
+                        numerosSorteados.includes(numero)
+                    ).length;
+                    
+                    numerosDiv.querySelectorAll('.numero-jogo').forEach((numDiv, numIndex) => {
+                        if (numerosSorteados.includes(jogo[numIndex])) {
+                            numDiv.classList.add('numero-acertado');
+                        }
+                    });
+                    
+                    acertosDiv.textContent = `${acertos} acertos`;
+                    acertosDiv.style.color = acertos >= 11 ? '#28a745' : '#dc3545';
+                }
+            });
+        }
+
+        // Inicialização
+        async function init() {
+            if (!extrairParametros()) return;
+            
+            const configData = await loadConfig();
+            if (!configData) return;
+            
+            const { config, bolaoConfig } = configData;
+            
+            await loadJogos(bolaoConfig);
+            const numerosSorteados = await loadResultado(config);
+            
+            if (numerosSorteados && window.jogosAtuais) {
+                window.numerosSorteados = numerosSorteados;
+                
+                calcularAcertos(window.jogosAtuais, numerosSorteados);
+                destacarAcertosNosJogos(window.jogosAtuais, numerosSorteados);
+            }
+        }
+
+        // Iniciar aplicação
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprovantes - Carregando...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .info {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .info-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item .label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .info-item .value {
+            color: #333;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+
+        .comprovantes-section {
+            margin-bottom: 30px;
+        }
+
+        .comprovantes-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .comprovantes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .comprovante-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .comprovante-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .comprovante-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #dc3545;
+        }
+
+        .comprovante-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .comprovante-info {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .comprovante-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .comprovantes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .back-btn {
+                position: static;
+                display: inline-block;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="javascript:history.back()" class="back-btn">← Voltar</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1>📄 Comprovantes</h1>
+            <div class="info">
+                <span id="modalidade">-</span> - Concurso <span id="concurso">-</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="info-section">
+                <h3>📊 Informações do Concurso</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="label">Modalidade</div>
+                        <div class="value" id="info-modalidade">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Concurso</div>
+                        <div class="value" id="info-concurso">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Data do Sorteio</div>
+                        <div class="value" id="info-data">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Status</div>
+                        <div class="value" id="info-status">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comprovantes-section">
+                <h3>📋 Documentos Disponíveis</h3>
+                <div class="loading" id="loading">Carregando comprovantes...</div>
+                <div class="comprovantes-grid" id="comprovantes-grid" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let BOLAO_ID = null;
+        let LOTERIA = null;
+        let PASTA_COMPROVANTES = null;
+
+        // Função para extrair parâmetros da URL
+        function extrairParametros() {
+            const urlParams = new URLSearchParams(window.location.search);
+            BOLAO_ID = urlParams.get('bolao');
+            LOTERIA = urlParams.get('loteria');
+            PASTA_COMPROVANTES = urlParams.get('pasta');
+            
+            if (!BOLAO_ID || !LOTERIA) {
+                document.querySelector('.content').innerHTML = 
+                    '<div class="error">Parâmetros inválidos. Use: ?loteria=nome&bolao=id&pasta=pasta</div>';
+                return false;
+            }
+            return true;
+        }
+
+        // Função para carregar informações do concurso
+        async function loadConcursoInfo() {
+            try {
+                const response = await fetch(`/${LOTERIA}/config.json?v=${Date.now()}`);
+                const config = await response.json();
+                
+                const bolaoConfig = config.boloes[BOLAO_ID];
+                if (!bolaoConfig) {
+                    throw new Error('Bolão não encontrado');
+                }
+                
+                const dataSorteio = bolaoConfig.data_sorteio || 'A definir';
+                
+                document.getElementById('modalidade').textContent = config.loteria.modalidade;
+                document.getElementById('concurso').textContent = config.loteria.concurso;
+                document.getElementById('info-modalidade').textContent = config.loteria.modalidade;
+                document.getElementById('info-concurso').textContent = config.loteria.concurso;
+                document.getElementById('info-data').textContent = dataSorteio;
+                
+                return config;
+            } catch (error) {
+                console.error('Erro ao carregar informações:', error);
+                return null;
+            }
+        }
+
+        // Função para verificar status do resultado
+        async function checkResultadoStatus(config) {
+            try {
+                if (config.loteria.resultado && config.loteria.resultado.length > 0) {
+                    document.getElementById('info-status').textContent = 'Resultado disponível';
+                    document.getElementById('info-status').style.color = '#28a745';
+                    return true;
+                } else {
+                    document.getElementById('info-status').textContent = 'Aguardando resultado';
+                    document.getElementById('info-status').style.color = '#ffc107';
+                    return false;
+                }
+            } catch (error) {
+                document.getElementById('info-status').textContent = 'Erro ao verificar';
+                document.getElementById('info-status').style.color = '#dc3545';
+                return false;
+            }
+        }
+
+        // Função para detectar automaticamente arquivos PDF
+        async function detectarPDFs() {
+            const possiveisArquivos = [
+                'comprovante-1.pdf', 'comprovante-2.pdf', 'comprovante-3.pdf', 'comprovante-4.pdf',
+                'comprovante-5.pdf', 'comprovante-6.pdf', 'comprovante-7.pdf', 'comprovante-8.pdf',
+                'comprovante-9.pdf', 'comprovante-10.pdf', 'comprovante-11.pdf', 'comprovante-12.pdf',
+                'comprovante-13.pdf', 'comprovante-14.pdf', 'comprovante-15.pdf', 'comprovante-16.pdf',
+                'comprovante-17.pdf', 'comprovante-18.pdf', 'comprovante-19.pdf', 'comprovante-20.pdf',
+                // Para teste, também detectar arquivos .txt
+                'comprovante-1.txt', 'comprovante-2.txt', 'comprovante-3.txt', 'comprovante-4.txt',
+                'comprovante-5.txt', 'comprovante-6.txt', 'comprovante-7.txt', 'comprovante-8.txt',
+                'comprovante-9.txt', 'comprovante-10.txt'
+            ];
+            
+            const arquivosExistentes = [];
+            
+            for (const arquivo of possiveisArquivos) {
+                try {
+                    const response = await fetch(`./${PASTA_COMPROVANTES}/${arquivo}`, { method: 'HEAD' });
+                    if (response.ok) {
+                        arquivosExistentes.push(arquivo);
+                    }
+                } catch (error) {
+                    // Arquivo não existe, continuar
+                }
+            }
+            
+            return arquivosExistentes;
+        }
+
+        // Função para carregar comprovantes
+        async function loadComprovantes() {
+            try {
+                const arquivosExistentes = await detectarPDFs();
+                
+                if (arquivosExistentes.length > 0) {
+                    const comprovantes = arquivosExistentes.map((arquivo, index) => ({
+                        nome: `Comprovante ${index + 1}`,
+                        arquivo: arquivo
+                    }));
+
+                    displayComprovantes(comprovantes);
+                } else {
+                    displayComprovantes([]);
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar comprovantes:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<div class="error">Erro ao carregar comprovantes</div>';
+            }
+        }
+
+        // Função para exibir comprovantes
+        function displayComprovantes(comprovantes) {
+            const container = document.getElementById('comprovantes-grid');
+            container.innerHTML = '';
+
+            if (comprovantes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Nenhum comprovante encontrado</h3>
+                        <p>Os comprovantes serão disponibilizados após o sorteio.</p>
+                    </div>
+                `;
+            } else {
+                comprovantes.forEach((comprovante, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'comprovante-card';
+                    
+                    card.innerHTML = `
+                        <div class="comprovante-icon">📄</div>
+                        <div class="comprovante-title">${comprovante.nome}</div>
+                        <div class="comprovante-actions">
+                            <button class="btn btn-primary" onclick="visualizarPDF('${comprovante.arquivo}')">
+                                👁️ Visualizar
+                            </button>
+                            <a href="./${PASTA_COMPROVANTES}/${comprovante.arquivo}" class="btn btn-success" download>
+                                ⬇️ Baixar
+                            </a>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                });
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            container.style.display = 'grid';
+        }
+
+        // Função para visualizar PDF
+        function visualizarPDF(arquivo) {
+            const url = `./${PASTA_COMPROVANTES}/${arquivo}`;
+            window.open(url, '_blank');
+        }
+
+        // Inicialização
+        async function init() {
+            if (!extrairParametros()) return;
+            
+            const config = await loadConcursoInfo();
+            if (!config) return;
+            
+            await checkResultadoStatus(config);
+            await loadComprovantes();
+        }
+
+        // Iniciar aplicação
+        init();
+    </script>
+</body>
+</html>

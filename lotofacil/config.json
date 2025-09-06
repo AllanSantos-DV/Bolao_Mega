@@ -1,0 +1,32 @@
+﻿{
+  "loteria": {
+    "modalidade": "Lotofacil",
+    "concurso": "3480",
+    "numeros_por_jogo": 15,
+    "range_acertos": {
+      "minimo": 11,
+      "maximo": 15
+    },
+    "resultado": [2,3,4,6,7,8,10,11,15,16,17,18,22,23,25]
+  },
+  "boloes": {
+    "bolao-130": {
+      "planilha": "Bolão independencia - 130.xlsx",
+      "cotas": 13,
+      "nome": "Bolao 130 Jogos",
+      "data_sorteio": "06/09/2025",
+      "comprovantes": {
+        "pasta": "lotofacil/bolao-130"
+      }
+    },
+    "bolao-30": {
+      "planilha": "Bolão independencia - 30.xlsx",
+      "cotas": 12,
+      "nome": "Bolao 30 Jogos",
+      "data_sorteio": "06/09/2025",
+      "comprovantes": {
+        "pasta": "lotofacil/bolao-30"
+      }
+    }
+  }
+}

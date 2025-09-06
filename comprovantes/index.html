@@ -322,7 +322,7 @@
         // Função para carregar informações do concurso
         async function loadConcursoInfo() {
             try {
-                const response = await fetch(`/${LOTERIA}/config.json?v=${Date.now()}`);
+                const response = await fetch(`../${LOTERIA}/config.json?v=${Date.now()}`);
                 const config = await response.json();
                 
                 const bolaoConfig = config.boloes[BOLAO_ID];
@@ -382,7 +382,7 @@
             
             for (const arquivo of possiveisArquivos) {
                 try {
-                    const response = await fetch(`./${PASTA_COMPROVANTES}/${arquivo}`, { method: 'HEAD' });
+                    const response = await fetch(`../${PASTA_COMPROVANTES}/${arquivo}`, { method: 'HEAD' });
                     if (response.ok) {
                         arquivosExistentes.push(arquivo);
                     }
@@ -441,7 +441,7 @@
                             <button class="btn btn-primary" onclick="visualizarPDF('${comprovante.arquivo}')">
                                 👁️ Visualizar
                             </button>
-                            <a href="./${PASTA_COMPROVANTES}/${comprovante.arquivo}" class="btn btn-success" download>
+                            <a href="../${PASTA_COMPROVANTES}/${comprovante.arquivo}" class="btn btn-success" download>
                                 ⬇️ Baixar
                             </a>
                         </div>
@@ -457,7 +457,7 @@
 
         // Função para visualizar PDF
         function visualizarPDF(arquivo) {
-            const url = `./${PASTA_COMPROVANTES}/${arquivo}`;
+            const url = `../${PASTA_COMPROVANTES}/${arquivo}`;
             window.open(url, '_blank');
         }
 

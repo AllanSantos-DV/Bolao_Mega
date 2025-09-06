@@ -23,6 +23,8 @@ Bolao_Mega/
 ## 🚀 Como Usar
 
 ### 1. Acessar o Sistema
+
+#### **Desenvolvimento Local:**
 **IMPORTANTE:** Para funcionar corretamente, o sistema deve ser executado em um servidor HTTP (não pode ser aberto diretamente no navegador).
 
 **Opção 1 - Servidor Python (Recomendado):**
@@ -36,6 +38,14 @@ Depois acesse: `http://localhost:8000`
 npx http-server -p 8000
 ```
 Depois acesse: `http://localhost:8000`
+
+#### **GitHub Pages (Produção):**
+O sistema está configurado para funcionar automaticamente no GitHub Pages. Após fazer push do código:
+
+1. Vá em **Settings** → **Pages**
+2. Selecione **Deploy from a branch**
+3. Escolha **main** branch
+4. Acesse: `https://seu-usuario.github.io/Bolao_Mega`
 
 **Opção 3 - GitHub Pages:**
 - Faça upload dos arquivos para um repositório GitHub

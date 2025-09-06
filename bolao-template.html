@@ -253,8 +253,10 @@
 
         .jogos-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
+            justify-content: center;
+            max-width: 100%;
         }
 
         .jogo-item {
@@ -360,13 +362,19 @@
             }
             
             .jogos-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .back-btn {
                 position: static;
                 display: inline-block;
                 margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .jogos-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>

@@ -366,6 +366,8 @@
 
         // Função para detectar automaticamente arquivos PDF
         async function detectarPDFs() {
+            console.log('Detectando arquivos na pasta:', PASTA_COMPROVANTES);
+            
             const possiveisArquivos = [
                 'comprovante-1.pdf', 'comprovante-2.pdf', 'comprovante-3.pdf', 'comprovante-4.pdf',
                 'comprovante-5.pdf', 'comprovante-6.pdf', 'comprovante-7.pdf', 'comprovante-8.pdf',
@@ -382,15 +384,21 @@
             
             for (const arquivo of possiveisArquivos) {
                 try {
-                    const response = await fetch(`./${PASTA_COMPROVANTES}/${arquivo}`, { method: 'HEAD' });
+                    const url = `./${PASTA_COMPROVANTES}/${arquivo}`;
+                    console.log('Testando arquivo:', url);
+                    const response = await fetch(url);
                     if (response.ok) {
+                        console.log('Arquivo encontrado:', arquivo);
                         arquivosExistentes.push(arquivo);
+                    } else {
+                        console.log('Arquivo não encontrado:', arquivo, 'Status:', response.status);
                     }
                 } catch (error) {
-                    // Arquivo não existe, continuar
+                    console.log('Erro ao testar arquivo:', arquivo, error.message);
                 }
             }
             
+            console.log('Arquivos encontrados:', arquivosExistentes);
             return arquivosExistentes;
         }
 

@@ -269,16 +269,22 @@
         // Função para verificar status do resultado
         async function verificarResultado(loteria) {
             try {
-                const response = await fetch(`./${loteria}/config.json`);
+                console.log('Verificando resultado para:', loteria);
+                const response = await fetch(`./${loteria}/config.json?v=${Date.now()}`);
                 if (response.ok) {
                     const config = await response.json();
+                    console.log('Config carregado:', config);
+                    console.log('Resultado no config:', config.loteria.resultado);
                     // Verificar se existe resultado no config
                     if (config.loteria.resultado && config.loteria.resultado.length > 0) {
+                        console.log('Resultado disponível!');
                         return 'disponivel';
                     }
                 }
+                console.log('Nenhum resultado encontrado');
                 return 'aguardando';
             } catch (error) {
+                console.error('Erro ao verificar resultado:', error);
                 return 'aguardando';
             }
         }

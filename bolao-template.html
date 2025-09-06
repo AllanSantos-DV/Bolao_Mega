@@ -450,7 +450,7 @@
         // Função para carregar configuração
         async function loadConfig() {
             try {
-                const response = await fetch(`./${LOTERIA}/config.json`);
+                const response = await fetch(`./${LOTERIA}/config.json?v=${Date.now()}`);
                 if (!response.ok) {
                     throw new Error('Config não encontrado');
                 }
@@ -492,10 +492,13 @@
         // Função para carregar resultado
         async function loadResultado(config) {
             try {
+                console.log('Carregando resultado...', config.loteria.resultado);
                 if (config.loteria.resultado && config.loteria.resultado.length > 0) {
+                    console.log('Resultado encontrado:', config.loteria.resultado);
                     displayResultado(config.loteria.resultado);
                     return config.loteria.resultado;
                 } else {
+                    console.log('Nenhum resultado encontrado');
                     document.getElementById('status-resultado').textContent = 'Aguardando resultado...';
                     return null;
                 }
@@ -508,9 +511,11 @@
 
         // Função para exibir resultado
         function displayResultado(numeros) {
+            console.log('Exibindo resultado:', numeros);
             document.getElementById('status-resultado').textContent = 'Resultado disponível!';
             
             const container = document.getElementById('numeros-sorteados');
+            console.log('Container encontrado:', container);
             container.innerHTML = '';
             
             numeros.forEach(numero => {
@@ -519,6 +524,7 @@
                 div.textContent = numero;
                 container.appendChild(div);
             });
+            console.log('Números exibidos:', numeros.length);
         }
 
         // Função para carregar jogos da planilha

@@ -192,6 +192,33 @@
             justify-content: center;
             font-weight: bold;
             font-size: 1.2em;
+            transition: all 0.3s ease;
+        }
+
+        .numero-sorteado.hit {
+            background: #28a745 !important;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+            animation: pulse-green 0.6s ease-in-out;
+        }
+
+        .numero-sorteado.miss {
+            background: #dc3545 !important;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.6);
+            animation: pulse-red 0.6s ease-in-out;
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1.1); }
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1.1); }
         }
 
         .acertos-section {
@@ -276,6 +303,22 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .jogo-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .jogo-item.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
         }
 
         .jogo-header {
@@ -430,6 +473,11 @@
 
             <div class="jogos-section">
                 <h3>🎮 Jogos do Bolão</h3>
+                <div class="jogos-controls" style="text-align: center; margin-bottom: 20px;">
+                    <button onclick="limparSelecao()" class="btn btn-secondary" style="display: none;" id="btn-limpar-selecao">
+                        🧹 Limpar Seleção
+                    </button>
+                </div>
                 <div class="loading" id="loading-jogos">Carregando jogos...</div>
                 <div class="jogos-grid" id="jogos-grid" style="display: none;"></div>
             </div>
@@ -742,6 +790,7 @@
                     const numerosDiv = item.querySelector('.numeros');
                     const acertosDiv = item.querySelector('.acertos');
                     
+                    // Limpar classes anteriores
                     numerosDiv.querySelectorAll('.numero-jogo').forEach(numDiv => {
                         numDiv.classList.remove('numero-acertado');
                     });
@@ -750,6 +799,7 @@
                         numerosSorteados.includes(numero)
                     ).length;
                     
+                    // Destacar números acertados
                     numerosDiv.querySelectorAll('.numero-jogo').forEach((numDiv, numIndex) => {
                         if (numerosSorteados.includes(jogo[numIndex])) {
                             numDiv.classList.add('numero-acertado');
@@ -758,8 +808,62 @@
                     
                     acertosDiv.textContent = `${acertos} acertos`;
                     acertosDiv.style.color = acertos >= 11 ? '#28a745' : '#dc3545';
+                    
+                    // Adicionar evento de clique para seleção
+                    item.onclick = () => selecionarJogo(index, jogo, numerosSorteados);
                 }
             });
+        }
+
+        // Função para selecionar um jogo e destacar números sorteados
+        function selecionarJogo(jogoIndex, jogo, numerosSorteados) {
+            // Remover seleção anterior
+            document.querySelectorAll('.jogo-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Selecionar jogo atual
+            const jogoItem = document.querySelectorAll('.jogo-item')[jogoIndex];
+            jogoItem.classList.add('selected');
+            
+            // Mostrar botão de limpar seleção
+            document.getElementById('btn-limpar-selecao').style.display = 'inline-block';
+            
+            // Limpar highlights anteriores dos números sorteados
+            document.querySelectorAll('.numero-sorteado').forEach(numDiv => {
+                numDiv.classList.remove('hit', 'miss');
+            });
+            
+            // Destacar números sorteados baseado no jogo selecionado
+            document.querySelectorAll('.numero-sorteado').forEach(numDiv => {
+                const numero = parseInt(numDiv.textContent);
+                if (jogo.includes(numero)) {
+                    numDiv.classList.add('hit');
+                } else {
+                    numDiv.classList.add('miss');
+                }
+            });
+            
+            console.log(`Jogo ${jogoIndex + 1} selecionado:`, jogo);
+            console.log('Números sorteados destacados:', numerosSorteados);
+        }
+
+        // Função para limpar seleção
+        function limparSelecao() {
+            // Remover seleção de todos os jogos
+            document.querySelectorAll('.jogo-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Esconder botão de limpar seleção
+            document.getElementById('btn-limpar-selecao').style.display = 'none';
+            
+            // Limpar highlights dos números sorteados
+            document.querySelectorAll('.numero-sorteado').forEach(numDiv => {
+                numDiv.classList.remove('hit', 'miss');
+            });
+            
+            console.log('Seleção limpa');
         }
 
         // Inicialização

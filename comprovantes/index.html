@@ -384,7 +384,7 @@
             
             for (const arquivo of possiveisArquivos) {
                 try {
-                    const url = `./${PASTA_COMPROVANTES}/${arquivo}`;
+                    const url = `../${PASTA_COMPROVANTES}/${arquivo}`;
                     console.log('Testando arquivo:', url);
                     const response = await fetch(url);
                     if (response.ok) {
@@ -449,7 +449,7 @@
                             <button class="btn btn-primary" onclick="visualizarPDF('${comprovante.arquivo}')">
                                 👁️ Visualizar
                             </button>
-                            <a href="./${PASTA_COMPROVANTES}/${comprovante.arquivo}" class="btn btn-success" download>
+                            <a href="../${PASTA_COMPROVANTES}/${comprovante.arquivo}" class="btn btn-success" download>
                                 ⬇️ Baixar
                             </a>
                         </div>
@@ -465,7 +465,7 @@
 
         // Função para visualizar PDF
         function visualizarPDF(arquivo) {
-            const url = `./${PASTA_COMPROVANTES}/${arquivo}`;
+            const url = `../${PASTA_COMPROVANTES}/${arquivo}`;
             window.open(url, '_blank');
         }
 

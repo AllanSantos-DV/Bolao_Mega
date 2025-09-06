@@ -16,7 +16,7 @@
       "nome": "Bolao 130 Jogos",
       "data_sorteio": "06/09/2025",
       "comprovantes": {
-        "pasta": "lotofacil/bolao-130"
+        "pasta": "comprovantes/lotofacil/bolao-130"
       }
     },
     "bolao-30": {
@@ -25,7 +25,7 @@
       "nome": "Bolao 30 Jogos",
       "data_sorteio": "06/09/2025",
       "comprovantes": {
-        "pasta": "lotofacil/bolao-30"
+        "pasta": "comprovantes/lotofacil/bolao-30"
       }
     }
   }

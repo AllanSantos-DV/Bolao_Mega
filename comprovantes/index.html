@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Comprovantes - Carregando...</title>
+    <script>
+        // Versioning automático para evitar cache
+        window.VERSION = Date.now();
+        console.log('Versão do sistema:', window.VERSION);
+    </script>
     <style>
         * {
             margin: 0;
@@ -322,7 +330,7 @@
         // Função para carregar informações do concurso
         async function loadConcursoInfo() {
             try {
-                const response = await fetch(`../${LOTERIA}/config.json?v=${Date.now()}`);
+                const response = await fetch(`../${LOTERIA}/config.json?v=${window.VERSION}`);
                 const config = await response.json();
                 
                 const bolaoConfig = config.boloes[BOLAO_ID];
@@ -384,7 +392,7 @@
             
             for (const arquivo of possiveisArquivos) {
                 try {
-                    const url = `../${PASTA_COMPROVANTES}/${arquivo}`;
+                    const url = `../${PASTA_COMPROVANTES}/${arquivo}?v=${window.VERSION}`;
                     console.log('Testando arquivo:', url);
                     const response = await fetch(url);
                     if (response.ok) {
@@ -449,7 +457,7 @@
                             <button class="btn btn-primary" onclick="visualizarPDF('${comprovante.arquivo}')">
                                 👁️ Visualizar
                             </button>
-                            <a href="../${PASTA_COMPROVANTES}/${comprovante.arquivo}" class="btn btn-success" download>
+                            <a href="../${PASTA_COMPROVANTES}/${comprovante.arquivo}?v=${window.VERSION}" class="btn btn-success" download>
                                 ⬇️ Baixar
                             </a>
                         </div>
@@ -465,7 +473,7 @@
 
         // Função para visualizar PDF
         function visualizarPDF(arquivo) {
-            const url = `../${PASTA_COMPROVANTES}/${arquivo}`;
+            const url = `../${PASTA_COMPROVANTES}/${arquivo}?v=${window.VERSION}`;
             window.open(url, '_blank');
         }
 

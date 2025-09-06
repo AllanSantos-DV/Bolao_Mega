@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Sistema de Bolões - Hub Principal</title>
+    <script>
+        // Versioning automático para evitar cache
+        window.VERSION = Date.now();
+        console.log('Versão do sistema:', window.VERSION);
+    </script>
     <style>
         * {
             margin: 0;
@@ -270,7 +278,7 @@
         async function verificarResultado(loteria) {
             try {
                 console.log('Verificando resultado para:', loteria);
-                const response = await fetch(`./${loteria}/config.json?v=${Date.now()}`);
+                const response = await fetch(`./${loteria}/config.json?v=${window.VERSION}`);
                 if (response.ok) {
                     const config = await response.json();
                     console.log('Config carregado:', config);

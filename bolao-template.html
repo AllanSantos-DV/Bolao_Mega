@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title id="page-title">Bolão - Carregando...</title>
+    <script>
+        // Versioning automático para evitar cache
+        window.VERSION = Date.now();
+        console.log('Versão do sistema:', window.VERSION);
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
@@ -450,7 +458,7 @@
         // Função para carregar configuração
         async function loadConfig() {
             try {
-                const response = await fetch(`./${LOTERIA}/config.json?v=${Date.now()}`);
+                const response = await fetch(`./${LOTERIA}/config.json?v=${window.VERSION}`);
                 if (!response.ok) {
                     throw new Error('Config não encontrado');
                 }
@@ -477,7 +485,7 @@
                     `${config.loteria.range_acertos.minimo}-${config.loteria.range_acertos.maximo}`;
                 
                 // Configurar downloads
-                document.getElementById('download-planilha').href = `./${LOTERIA}/${bolaoConfig.planilha}`;
+                document.getElementById('download-planilha').href = `./${LOTERIA}/${bolaoConfig.planilha}?v=${window.VERSION}`;
                 document.getElementById('download-comprovantes').href = `./comprovantes/index.html?loteria=${LOTERIA}&bolao=${BOLAO_ID}&pasta=${bolaoConfig.comprovantes.pasta}`;
                 
                 return { config, bolaoConfig };
@@ -532,7 +540,7 @@
             try {
                 console.log('Tentando carregar planilha:', bolaoConfig.planilha);
                 
-                const response = await fetch(`./${LOTERIA}/${bolaoConfig.planilha}`);
+                const response = await fetch(`./${LOTERIA}/${bolaoConfig.planilha}?v=${window.VERSION}`);
                 
                 if (!response.ok) {
                     throw new Error(`Planilha não encontrada: ${response.status}`);

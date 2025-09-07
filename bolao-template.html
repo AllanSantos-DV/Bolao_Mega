@@ -319,6 +319,33 @@
             font-size: 1.2em;
         }
 
+        .resultado-actions {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .btn-limpar-selecao-fixed {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 1em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-limpar-selecao-fixed:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
         .resultado-section.fixed .numeros-sorteados {
             justify-content: center;
             margin-bottom: 10px;
@@ -731,6 +758,11 @@
                 <h3>🎯 Resultado do Sorteio</h3>
                 <div class="status-resultado" id="status-resultado">Aguardando resultado...</div>
                 <div class="numeros-sorteados" id="numeros-sorteados"></div>
+                <div id="resultado-actions" class="resultado-actions" style="display: none;">
+                    <button id="btn-limpar-selecao-fixed" class="btn-limpar-selecao-fixed" onclick="limparSelecao()">
+                        🧹 Limpar Seleção
+                    </button>
+                </div>
             </div>
 
             <div class="acertos-section" id="acertos-section">
@@ -741,9 +773,6 @@
             <div class="jogos-section">
                 <h3>🎮 Jogos do Bolão</h3>
                 <div class="jogos-controls" style="text-align: center; margin-bottom: 20px;">
-                    <button onclick="limparSelecao()" class="btn btn-secondary" style="display: none;" id="btn-limpar-selecao">
-                        🧹 Limpar Seleção
-                    </button>
                 </div>
                 <div class="loading" id="loading-jogos">Carregando jogos...</div>
                 <div class="jogos-grid" id="jogos-grid" style="display: none;"></div>
@@ -773,20 +802,23 @@
         // Função para carregar configuração
         async function loadConfig() {
             try {
+                console.log('Carregando config para:', LOTERIA, BOLAO_ID);
                 const response = await fetch(`./${LOTERIA}/config.json?v=${window.VERSION}`);
                 if (!response.ok) {
                     throw new Error('Config não encontrado');
                 }
                 
                 const config = await response.json();
+                console.log('Config carregado:', config);
                 const bolaoConfig = config.boloes[BOLAO_ID];
+                console.log('Bolão config:', bolaoConfig);
                 
                 if (!bolaoConfig) {
                     throw new Error('Bolão não encontrado no config');
                 }
                 
                 // Atualizar título da página
-                document.getElementById('page-title').textContent = `${bolaoConfig.nome} - ${config.loteria.modalidade}`;
+                document.title = `${bolaoConfig.nome} - ${config.loteria.modalidade}`;
                 document.getElementById('bolao-nome').textContent = bolaoConfig.nome;
                 
                 // Atualizar informações básicas
@@ -812,13 +844,10 @@
         // Função para carregar resultado com consulta automática à API
         async function loadResultado(config, bolaoConfig) {
             try {
-                console.log('Carregando resultado...', bolaoConfig.resultado);
-                
                 // Primeiro, tentar consultar a API da Caixa
                 const loteria = window.LOTERIA || 'lotofacil';
                 const concurso = bolaoConfig.concurso || '3480';
                 
-                console.log(`Consultando API da Caixa: ${loteria}, concurso ${concurso}`);
                 const dadosCaixa = await consultarResultadoCaixa(loteria, concurso);
                 
                 if (dadosCaixa) {
@@ -845,8 +874,9 @@
                         }
                         
                         // Recalcular acertos com dados da Caixa
-                        if (window.jogos && window.jogos.length > 0) {
-                            calcularAcertos(window.jogos, numerosOficiais, dadosCaixa);
+                        if (window.jogosAtuais && window.jogosAtuais.length > 0) {
+                            calcularAcertos(window.jogosAtuais, numerosOficiais, dadosCaixa);
+                            window.acertosJaCalculados = true;
                         }
                         
                         return numerosOficiais;
@@ -857,6 +887,13 @@
                 if (bolaoConfig.resultado && bolaoConfig.resultado.length > 0) {
                     console.log('Usando resultado do config:', bolaoConfig.resultado);
                     displayResultado(bolaoConfig.resultado, 'config');
+                    
+                    // Recalcular acertos com resultado do config
+                    if (window.jogosAtuais && window.jogosAtuais.length > 0) {
+                        calcularAcertos(window.jogosAtuais, bolaoConfig.resultado, null);
+                        window.acertosJaCalculados = true;
+                    }
+                    
                     return bolaoConfig.resultado;
                 } else {
                     console.log('Nenhum resultado encontrado');
@@ -872,7 +909,6 @@
 
         // Função para exibir resultado
         function displayResultado(numeros, tipo = 'config') {
-            console.log('Exibindo resultado:', numeros, 'tipo:', tipo);
             
             // Definir status baseado no tipo
             const statusElement = document.getElementById('status-resultado');
@@ -885,7 +921,6 @@
             }
             
             const container = document.getElementById('numeros-sorteados');
-            console.log('Container encontrado:', container);
             container.innerHTML = '';
             
             numeros.forEach(numero => {
@@ -894,14 +929,11 @@
                 div.textContent = numero;
                 container.appendChild(div);
             });
-            console.log('Números exibidos:', numeros.length);
         }
 
         // Função para carregar jogos da planilha
         async function loadJogos(bolaoConfig) {
             try {
-                console.log('Tentando carregar planilha:', bolaoConfig.planilha);
-                
                 const response = await fetch(`./${LOTERIA}/${bolaoConfig.planilha}?v=${window.VERSION}`);
                 
                 if (!response.ok) {
@@ -911,14 +943,10 @@
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 
-                console.log('Planilhas encontradas:', workbook.SheetNames);
-                
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                
-                console.log('Dados da planilha:', jsonData.length, 'linhas');
                 
                 const jogos = [];
                 for (let i = 1; i < jsonData.length; i++) {
@@ -933,8 +961,6 @@
                         }
                     }
                 }
-                
-                console.log('Jogos válidos encontrados:', jogos.length);
                 
                 if (jogos.length === 0) {
                     throw new Error('Nenhum jogo válido encontrado na planilha');
@@ -997,11 +1023,6 @@
         function calcularAcertos(jogos, numerosSorteados, dadosCaixa = null) {
             if (!numerosSorteados) return;
             
-            console.log('Calculando acertos...');
-            console.log('Jogos:', jogos.length);
-            console.log('Números sorteados:', numerosSorteados);
-            console.log('Dados Caixa:', dadosCaixa);
-            
             const acertosPorFaixa = {};
             const faixas = [15, 14, 13, 12, 11];
             
@@ -1014,16 +1035,12 @@
                     numerosSorteados.includes(numero)
                 ).length;
                 
-                if (index < 3) {
-                    console.log(`Jogo ${index + 1}:`, jogo, 'Acertos:', acertos);
-                }
                 
                 if (acertos >= 11) {
                     acertosPorFaixa[acertos] = (acertosPorFaixa[acertos] || 0) + 1;
                 }
             });
             
-            console.log('Acertos por faixa:', acertosPorFaixa);
             displayAcertos(acertosPorFaixa);
             
             // Calcular ganhos se houver configuração
@@ -1146,8 +1163,9 @@
             const jogoItem = document.querySelectorAll('.jogo-item')[jogoIndex];
             jogoItem.classList.add('selected');
             
-            // Mostrar botão de limpar seleção
-            document.getElementById('btn-limpar-selecao').style.display = 'inline-block';
+            // Mostrar botão de limpar seleção no resultado fixo
+            const resultadoActions = document.getElementById('resultado-actions');
+            resultadoActions.style.display = 'block';
             
             // Limpar highlights anteriores dos números sorteados
             document.querySelectorAll('.numero-sorteado').forEach(numDiv => {
@@ -1169,8 +1187,6 @@
             resultadoSection.classList.add('fixed');
             document.body.classList.add('resultado-fixo');
             
-            console.log(`Jogo ${jogoIndex + 1} selecionado:`, jogo);
-            console.log('Números sorteados destacados:', numerosSorteados);
         }
 
         // Função para limpar seleção
@@ -1180,8 +1196,9 @@
                 item.classList.remove('selected');
             });
             
-            // Esconder botão de limpar seleção
-            document.getElementById('btn-limpar-selecao').style.display = 'none';
+            // Esconder botão de limpar seleção no resultado fixo
+            const resultadoActions = document.getElementById('resultado-actions');
+            resultadoActions.style.display = 'none';
             
             // Limpar highlights dos números sorteados
             document.querySelectorAll('.numero-sorteado').forEach(numDiv => {
@@ -1193,7 +1210,6 @@
             resultadoSection.classList.remove('fixed');
             document.body.classList.remove('resultado-fixo');
             
-            console.log('Seleção limpa');
         }
 
         // Função para comparar resultados e detectar divergências
@@ -1243,14 +1259,11 @@
             // Adicionar warning após o status
             statusElement.insertAdjacentHTML('afterend', warningHTML);
             
-            console.log('Warning de divergência exibido');
         }
 
         // Função para consultar API oficial da Caixa
         async function consultarResultadoCaixa(loteria, concurso) {
             try {
-                console.log(`Consultando API da Caixa para ${loteria}, concurso ${concurso}`);
-                
                 const url = `https://servicebus2.caixa.gov.br/portaldeloterias/api/${loteria}/${concurso}`;
                 const response = await fetch(url);
                 
@@ -1259,8 +1272,6 @@
                 }
                 
                 const dados = await response.json();
-                console.log('Dados recebidos da Caixa:', dados);
-                
                 return dados;
             } catch (error) {
                 console.error('Erro ao consultar API da Caixa:', error);
@@ -1276,8 +1287,6 @@
             
             // Converter strings para números
             const numeros = dadosCaixa.listaDezenas.map(num => parseInt(num));
-            console.log('Números extraídos:', numeros);
-            
             return numeros;
         }
 
@@ -1342,7 +1351,6 @@
                 valor: item.valorPremio
             }));
             
-            console.log('Dados de premiação extraídos:', premiacao);
             return premiacao;
         }
 
@@ -1374,8 +1382,6 @@
             `;
             
             premiacaoInfo.innerHTML = infoHTML;
-            
-            console.log('Premiação oficial exibida');
         }
 
 
@@ -1438,7 +1444,6 @@
 
         // Função para calcular e exibir ganhos
         function calcularGanhos(config, bolaoConfig, contagemAcertos, dadosCaixa = null) {
-            console.log('Calculando ganhos...', { config, bolaoConfig, contagemAcertos, dadosCaixa });
             
             // Combinar valores padrão da loteria com valores específicos do bolão
             const valoresPadrao = config.loteria.acertos || {};
@@ -1450,6 +1455,7 @@
             // Se temos dados da API da Caixa, incluir valores de 14 e 15 acertos
             if (dadosCaixa && dadosCaixa.listaRateioPremio) {
                 const premiacao = dadosCaixa.listaRateioPremio;
+                
                 premiacao.forEach(item => {
                     if (item.descricaoFaixa.includes('14 acertos')) {
                         valoresCombinados['14'] = item.valorPremio;
@@ -1458,8 +1464,6 @@
                     }
                 });
             }
-            
-            console.log('Valores combinados:', valoresCombinados);
             
             let temGanhos = false;
             let totalGanhos = 0;
@@ -1539,19 +1543,25 @@
                     
                 document.getElementById('ganhos-total').innerHTML = totalTexto;
                 
-                console.log('Ganhos calculados:', { totalGanhos, valorPorCota, totalCotas, ganhosHTML });
             } else {
                 ganhosSection.style.display = 'none';
-                console.log('Nenhum ganho encontrado');
             }
         }
 
         // Inicialização
         async function init() {
-            if (!extrairParametros()) return;
+            console.log('Iniciando aplicação...');
+            if (!extrairParametros()) {
+                console.log('Parâmetros inválidos');
+                return;
+            }
             
+            console.log('Parâmetros extraídos:', LOTERIA, BOLAO_ID);
             const configData = await loadConfig();
-            if (!configData) return;
+            if (!configData) {
+                console.log('Config não carregado');
+                return;
+            }
             
             const { config, bolaoConfig } = configData;
             
@@ -1565,7 +1575,11 @@
             if (numerosSorteados && window.jogosAtuais) {
                 window.numerosSorteados = numerosSorteados;
                 
-                calcularAcertos(window.jogosAtuais, numerosSorteados);
+                // Se os acertos não foram calculados em loadResultado, calcular agora
+                if (!window.acertosJaCalculados) {
+                    calcularAcertos(window.jogosAtuais, numerosSorteados);
+                }
+                
                 destacarAcertosNosJogos(window.jogosAtuais, numerosSorteados);
             }
         }

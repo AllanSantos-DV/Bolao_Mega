@@ -234,6 +234,70 @@
             text-align: center;
         }
 
+        .ganhos-section {
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+        }
+
+        .ganhos-section h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .ganhos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .ganho-item {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .ganho-item.has-value {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+            font-weight: bold;
+        }
+
+        .ganho-acertos {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .ganho-valor {
+            font-size: 1.1em;
+            color: #28a745;
+        }
+
+        .ganho-valor.null {
+            color: #ffc107;
+            font-style: italic;
+        }
+
+        .ganhos-total {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.3em;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
         .acertos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -437,14 +501,6 @@
                         <div class="label">Total de Jogos</div>
                         <div class="value" id="total-jogos">-</div>
                     </div>
-                    <div class="info-item">
-                        <div class="label">Números por Jogo</div>
-                        <div class="value" id="numeros-por-jogo">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="label">Range de Acertos</div>
-                        <div class="value" id="range-acertos">-</div>
-                    </div>
                 </div>
             </div>
 
@@ -458,6 +514,12 @@
                         📄 Comprovantes
                     </a>
                 </div>
+            </div>
+
+            <div class="ganhos-section" id="ganhos-section" style="display: none;">
+                <h3>💰 Ganhos do Bolão</h3>
+                <div class="ganhos-grid" id="ganhos-grid"></div>
+                <div class="ganhos-total" id="ganhos-total"></div>
             </div>
 
             <div class="resultado-section">
@@ -524,13 +586,10 @@
                 
                 // Atualizar informações básicas
                 document.getElementById('modalidade').textContent = config.loteria.modalidade;
-                document.getElementById('concurso').textContent = config.loteria.concurso;
+                document.getElementById('concurso').textContent = bolaoConfig.concurso;
                 document.getElementById('info-modalidade').textContent = config.loteria.modalidade;
-                document.getElementById('info-concurso').textContent = config.loteria.concurso;
+                document.getElementById('info-concurso').textContent = bolaoConfig.concurso;
                 document.getElementById('total-cotas').textContent = bolaoConfig.cotas;
-                document.getElementById('numeros-por-jogo').textContent = config.loteria.numeros_por_jogo;
-                document.getElementById('range-acertos').textContent = 
-                    `${config.loteria.range_acertos.minimo}-${config.loteria.range_acertos.maximo}`;
                 
                 // Configurar downloads
                 document.getElementById('download-planilha').href = `./${LOTERIA}/${bolaoConfig.planilha}?v=${window.VERSION}`;
@@ -546,13 +605,13 @@
         }
 
         // Função para carregar resultado
-        async function loadResultado(config) {
+        async function loadResultado(config, bolaoConfig) {
             try {
-                console.log('Carregando resultado...', config.loteria.resultado);
-                if (config.loteria.resultado && config.loteria.resultado.length > 0) {
-                    console.log('Resultado encontrado:', config.loteria.resultado);
-                    displayResultado(config.loteria.resultado);
-                    return config.loteria.resultado;
+                console.log('Carregando resultado...', bolaoConfig.resultado);
+                if (bolaoConfig.resultado && bolaoConfig.resultado.length > 0) {
+                    console.log('Resultado encontrado:', bolaoConfig.resultado);
+                    displayResultado(bolaoConfig.resultado);
+                    return bolaoConfig.resultado;
                 } else {
                     console.log('Nenhum resultado encontrado');
                     document.getElementById('status-resultado').textContent = 'Aguardando resultado...';
@@ -710,6 +769,11 @@
             
             console.log('Acertos por faixa:', acertosPorFaixa);
             displayAcertos(acertosPorFaixa);
+            
+            // Calcular ganhos se houver configuração
+            if (window.configAtual && window.bolaoConfigAtual) {
+                calcularGanhos(window.configAtual, window.bolaoConfigAtual, acertosPorFaixa);
+            }
         }
 
         // Função para exibir contagem de acertos
@@ -866,6 +930,71 @@
             console.log('Seleção limpa');
         }
 
+        // Função para calcular e exibir ganhos
+        function calcularGanhos(config, bolaoConfig, contagemAcertos) {
+            console.log('Calculando ganhos...', { config, bolaoConfig, contagemAcertos });
+            
+            // Combinar valores padrão da loteria com valores específicos do bolão
+            const valoresPadrao = config.loteria.acertos || {};
+            const valoresBolao = bolaoConfig.acertos || {};
+            
+            // Criar objeto combinado (bolão tem prioridade sobre padrão)
+            const valoresCombinados = { ...valoresPadrao, ...valoresBolao };
+            
+            console.log('Valores combinados:', valoresCombinados);
+            
+            let temGanhos = false;
+            let totalGanhos = 0;
+            const ganhosHTML = [];
+            
+            // Calcular ganhos para cada faixa de acertos
+            for (const [acertos, quantidade] of Object.entries(contagemAcertos)) {
+                if (quantidade > 0) {
+                    const valorUnitario = valoresCombinados[acertos];
+                    
+                    if (valorUnitario !== undefined && valorUnitario !== null) {
+                        temGanhos = true;
+                        const ganhoTotal = quantidade * valorUnitario;
+                        totalGanhos += ganhoTotal;
+                        
+                        const valorTexto = valorUnitario === null ? 'A calcular pela caixa' : `R$ ${valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        const classeValor = valorUnitario === null ? 'null' : '';
+                        
+                        ganhosHTML.push(`
+                            <div class="ganho-item has-value">
+                                <div class="ganho-acertos">${acertos} acertos</div>
+                                <div class="ganho-valor ${classeValor}">
+                                    ${quantidade} × ${valorTexto} = R$ ${ganhoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                            </div>
+                        `);
+                    }
+                }
+            }
+            
+            // Exibir seção de ganhos apenas se houver ganhos
+            const ganhosSection = document.getElementById('ganhos-section');
+            if (temGanhos) {
+                ganhosSection.style.display = 'block';
+                document.getElementById('ganhos-grid').innerHTML = ganhosHTML.join('');
+                
+                // Calcular valor por cota
+                const totalCotas = bolaoConfig.cotas;
+                const valorPorCota = totalGanhos > 0 ? Math.floor((totalGanhos / totalCotas) * 100) / 100 : 0;
+                
+                const totalTexto = totalGanhos > 0 
+                    ? `Total: R$ ${totalGanhos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Valor por cota: R$ ${valorPorCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : 'Valores a calcular pela caixa';
+                    
+                document.getElementById('ganhos-total').innerHTML = totalTexto;
+                
+                console.log('Ganhos calculados:', { totalGanhos, valorPorCota, totalCotas, ganhosHTML });
+            } else {
+                ganhosSection.style.display = 'none';
+                console.log('Nenhum ganho encontrado');
+            }
+        }
+
         // Inicialização
         async function init() {
             if (!extrairParametros()) return;
@@ -875,8 +1004,12 @@
             
             const { config, bolaoConfig } = configData;
             
+            // Armazenar configurações globalmente para uso na função de ganhos
+            window.configAtual = config;
+            window.bolaoConfigAtual = bolaoConfig;
+            
             await loadJogos(bolaoConfig);
-            const numerosSorteados = await loadResultado(config);
+            const numerosSorteados = await loadResultado(config, bolaoConfig);
             
             if (numerosSorteados && window.jogosAtuais) {
                 window.numerosSorteados = numerosSorteados;

@@ -341,9 +341,9 @@
                 const dataSorteio = bolaoConfig.data_sorteio || 'A definir';
                 
                 document.getElementById('modalidade').textContent = config.loteria.modalidade;
-                document.getElementById('concurso').textContent = config.loteria.concurso;
+                document.getElementById('concurso').textContent = bolaoConfig.concurso;
                 document.getElementById('info-modalidade').textContent = config.loteria.modalidade;
-                document.getElementById('info-concurso').textContent = config.loteria.concurso;
+                document.getElementById('info-concurso').textContent = bolaoConfig.concurso;
                 document.getElementById('info-data').textContent = dataSorteio;
                 
                 return config;
@@ -356,7 +356,8 @@
         // Função para verificar status do resultado
         async function checkResultadoStatus(config) {
             try {
-                if (config.loteria.resultado && config.loteria.resultado.length > 0) {
+                const bolaoConfig = config.boloes[BOLAO_ID];
+                if (bolaoConfig && bolaoConfig.resultado && bolaoConfig.resultado.length > 0) {
                     document.getElementById('info-status').textContent = 'Resultado disponível';
                     document.getElementById('info-status').style.color = '#28a745';
                     return true;

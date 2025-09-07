@@ -282,35 +282,49 @@
                 if (response.ok) {
                     const config = await response.json();
                     console.log('Config carregado:', config);
-                    console.log('Resultado no config:', config.loteria.resultado);
-                    // Verificar se existe resultado no config
-                    if (config.loteria.resultado && config.loteria.resultado.length > 0) {
-                        console.log('Resultado disponível!');
-                        return 'disponivel';
+                    
+                    // Retornar status de cada bolão individualmente
+                    const statusBoloes = {};
+                    for (const bolaoId in config.boloes) {
+                        const bolao = config.boloes[bolaoId];
+                        console.log(`Bolão ${bolaoId} resultado:`, bolao.resultado);
+                        if (bolao.resultado && bolao.resultado.length > 0) {
+                            statusBoloes[bolaoId] = 'disponivel';
+                        } else {
+                            statusBoloes[bolaoId] = 'aguardando';
+                        }
                     }
+                    
+                    console.log('Status dos bolões:', statusBoloes);
+                    return statusBoloes;
                 }
                 console.log('Nenhum resultado encontrado');
-                return 'aguardando';
+                return {};
             } catch (error) {
                 console.error('Erro ao verificar resultado:', error);
-                return 'aguardando';
+                return {};
             }
         }
 
         // Função para criar card de loteria
-        function criarCardLoteria(loteriaData) {
+        function criarCardLoteria(loteriaData, statusBoloes = {}) {
             const { nome, config } = loteriaData;
             const loteria = config.loteria;
             
             const card = document.createElement('div');
             card.className = 'loteria-card';
             
-            const boloesHTML = Object.entries(config.boloes).map(([id, bolao]) => `
+            const boloesHTML = Object.entries(config.boloes).map(([id, bolao]) => {
+                const status = statusBoloes[id] || 'aguardando';
+                const statusText = status === 'disponivel' ? 'Resultado disponível' : 'Aguardando resultado';
+                const statusClass = status === 'disponivel' ? 'status-disponivel' : 'status-aguardando';
+                
+                return `
                 <div class="bolao-item">
                     <div class="bolao-header">
                         <div class="bolao-nome">${bolao.nome}</div>
-                        <div class="bolao-status status-aguardando" id="status-${nome}-${id}">
-                            Aguardando resultado
+                        <div class="bolao-status ${statusClass}" id="status-${nome}-${id}">
+                            ${statusText}
                         </div>
                     </div>
                     <div class="bolao-info">
@@ -321,7 +335,10 @@
                             <strong>Modalidade:</strong> ${loteria.modalidade}
                         </div>
                         <div class="bolao-info-item">
-                            <strong>Concurso:</strong> ${loteria.concurso}
+                            <strong>Concurso:</strong> ${bolao.concurso}
+                        </div>
+                        <div class="bolao-info-item">
+                            <strong>Data:</strong> ${bolao.data_sorteio}
                         </div>
                         <div class="bolao-info-item">
                             <strong>Números:</strong> ${loteria.numeros_por_jogo}
@@ -331,15 +348,12 @@
                         Acessar Bolão
                     </a>
                 </div>
-            `).join('');
+            `;
+            }).join('');
             
             card.innerHTML = `
                 <h3>${loteria.modalidade}</h3>
                 <div class="loteria-info">
-                    <div class="info-item">
-                        <span class="info-label">Concurso:</span>
-                        <span class="info-value">${loteria.concurso}</span>
-                    </div>
                     <div class="info-item">
                         <span class="info-label">Números por jogo:</span>
                         <span class="info-value">${loteria.numeros_por_jogo}</span>
@@ -362,33 +376,6 @@
             return card;
         }
 
-        // Função para atualizar status dos resultados
-        async function atualizarStatusResultados() {
-            for (const loteria of LOTERIAS) {
-                try {
-                    const response = await fetch(`./${loteria}/config.json`);
-                    if (response.ok) {
-                        const config = await response.json();
-                        const status = await verificarResultado(loteria);
-                        
-                        Object.keys(config.boloes).forEach(bolaoId => {
-                            const statusElement = document.getElementById(`status-${loteria}-${bolaoId}`);
-                            if (statusElement) {
-                                if (status === 'disponivel') {
-                                    statusElement.textContent = 'Resultado disponível';
-                                    statusElement.className = 'bolao-status status-disponivel';
-                                } else {
-                                    statusElement.textContent = 'Aguardando resultado';
-                                    statusElement.className = 'bolao-status status-aguardando';
-                                }
-                            }
-                        });
-                    }
-                } catch (error) {
-                    console.error(`Erro ao atualizar status para ${loteria}:`, error);
-                }
-            }
-        }
 
         // Função principal para carregar loterias
         async function carregarLoterias() {
@@ -415,13 +402,13 @@
                     `;
                 } else {
                     container.innerHTML = '';
-                    loteriasEncontradas.forEach(loteriaData => {
-                        const card = criarCardLoteria(loteriaData);
-                        container.appendChild(card);
-                    });
                     
-                    // Atualizar status dos resultados
-                    await atualizarStatusResultados();
+                    // Carregar status de cada loteria e criar cards
+                    for (const loteriaData of loteriasEncontradas) {
+                        const statusBoloes = await verificarResultado(loteriaData.nome);
+                        const card = criarCardLoteria(loteriaData, statusBoloes);
+                        container.appendChild(card);
+                    }
                 }
                 
                 loading.style.display = 'none';
@@ -440,7 +427,6 @@
         // Função para atualizar periodicamente
         function iniciarAtualizacaoPeriodica() {
             // Atualizar a cada 30 segundos
-            setInterval(atualizarStatusResultados, 30000);
         }
 
         // Inicialização

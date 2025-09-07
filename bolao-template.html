@@ -13,6 +13,81 @@
         console.log('Versão do sistema:', window.VERSION);
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Tornar funções disponíveis globalmente
+        window.firebaseDoc = doc;
+        window.firebaseGetDoc = getDoc;
+        window.firebaseSetDoc = setDoc;
+        window.firebaseServerTimestamp = serverTimestamp;
+        
+        // Carregar configuração do Firebase dinamicamente
+        async function loadFirebaseConfig() {
+            try {
+                // Tentar carregar configuração com variáveis de ambiente
+                const response = await fetch('./firebase-config.js');
+                if (response.ok) {
+                    // Executar o script para definir as variáveis globais
+                    const script = document.createElement('script');
+                    script.src = './firebase-config.js';
+                    document.head.appendChild(script);
+                    
+                    // Aguardar um pouco para as variáveis serem definidas
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    // Usar as variáveis globais se disponíveis
+                    const config = {
+                        apiKey: window.FIREBASE_API_KEY || "CONFIG_PADRAO_API_KEY",
+                        authDomain: window.FIREBASE_AUTH_DOMAIN || "mega-bolao-2025.firebaseapp.com",
+                        projectId: window.FIREBASE_PROJECT_ID || "mega-bolao-2025",
+                        storageBucket: window.FIREBASE_STORAGE_BUCKET || "mega-bolao-2025.appspot.com",
+                        messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID || "CONFIG_PADRAO_SENDER_ID",
+                        appId: window.FIREBASE_APP_ID || "CONFIG_PADRAO_APP_ID"
+                    };
+                    
+                    console.log('✅ Configuração Firebase carregada:', config.projectId);
+                    return config;
+                }
+            } catch (error) {
+                console.warn('⚠️ Erro ao carregar configuração Firebase:', error);
+            }
+            
+            // Fallback para configuração padrão
+            return {
+                apiKey: "CONFIG_PADRAO_API_KEY",
+                authDomain: "mega-bolao-2025.firebaseapp.com",
+                projectId: "mega-bolao-2025",
+                storageBucket: "mega-bolao-2025.appspot.com",
+                messagingSenderId: "CONFIG_PADRAO_SENDER_ID",
+                appId: "CONFIG_PADRAO_APP_ID"
+            };
+        }
+        
+        // Inicializar Firebase
+        async function initFirebase() {
+            const firebaseConfig = await loadFirebaseConfig();
+            
+            try {
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                
+                // Tornar disponível globalmente
+                window.firebaseApp = app;
+                window.firebaseDb = db;
+                
+                console.log('✅ Firebase inicializado com sucesso');
+            } catch (error) {
+                console.error('❌ Erro ao inicializar Firebase:', error);
+            }
+        }
+        
+        // Inicializar quando a página carregar
+        initFirebase();
+    </script>
     <style>
         * {
             margin: 0;
@@ -173,6 +248,10 @@
             text-align: center;
             font-weight: bold;
         }
+
+
+
+
 
         .warning-divergencia {
             background: linear-gradient(135deg, #ff6b6b, #ee5a24);
@@ -848,7 +927,7 @@
                 const loteria = window.LOTERIA || 'lotofacil';
                 const concurso = bolaoConfig.concurso || '3480';
                 
-                const dadosCaixa = await consultarResultadoCaixa(loteria, concurso);
+                const dadosCaixa = await obterResultado(loteria, concurso);
                 
                 if (dadosCaixa) {
                     const numerosOficiais = extrairNumerosResultado(dadosCaixa);
@@ -879,6 +958,7 @@
                             window.acertosJaCalculados = true;
                         }
                         
+                        
                         return numerosOficiais;
                     }
                 }
@@ -888,13 +968,14 @@
                     console.log('Usando resultado do config:', bolaoConfig.resultado);
                     displayResultado(bolaoConfig.resultado, 'config');
                     
-                    // Recalcular acertos com resultado do config
-                    if (window.jogosAtuais && window.jogosAtuais.length > 0) {
-                        calcularAcertos(window.jogosAtuais, bolaoConfig.resultado, null);
-                        window.acertosJaCalculados = true;
-                    }
-                    
-                    return bolaoConfig.resultado;
+                        // Recalcular acertos com resultado do config
+                        if (window.jogosAtuais && window.jogosAtuais.length > 0) {
+                            calcularAcertos(window.jogosAtuais, bolaoConfig.resultado, null);
+                            window.acertosJaCalculados = true;
+                        }
+                        
+                        
+                        return bolaoConfig.resultado;
                 } else {
                     console.log('Nenhum resultado encontrado');
                     document.getElementById('status-resultado').textContent = 'Aguardando resultado...';
@@ -1261,21 +1342,350 @@
             
         }
 
-        // Função para consultar API oficial da Caixa
-        async function consultarResultadoCaixa(loteria, concurso) {
+        // Cache para API da Caixa - Firebase + LocalStorage
+        // Duração do cache local: 24 horas
+        const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 horas em milissegundos
+
+        // Função para verificar se o cache local é válido
+        function isLocalCacheValid(cacheData) {
+            if (!cacheData || !cacheData.timestamp) return false;
+            const now = Date.now();
+            const cacheAge = now - cacheData.timestamp;
+            return cacheAge < CACHE_DURATION;
+        }
+
+        // Função para validar dados antes de salvar no cache
+        function validarDadosCache(data, loteria, concurso) {
             try {
-                const url = `https://servicebus2.caixa.gov.br/portaldeloterias/api/${loteria}/${concurso}`;
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`Erro na API da Caixa: ${response.status}`);
+                // Obter configuração da loteria
+                const config = obterConfigLoteria(loteria);
+                if (!config || !config.loteria) {
+                    console.warn(`⚠️ Configuração não encontrada para ${loteria}`);
+                    return { valido: false, motivo: 'Config não encontrada' };
                 }
                 
-                const dados = await response.json();
-                return dados;
+                const numerosPorJogo = config.loteria.numeros_por_jogo;
+                const resultado = data.listaDezenas || data.resultado || [];
+                
+                // Validar quantidade de números
+                if (!Array.isArray(resultado)) {
+                    return { valido: false, motivo: 'Resultado não é array' };
+                }
+                
+                if (resultado.length !== numerosPorJogo) {
+                    return { 
+                        valido: false, 
+                        motivo: `Quantidade incorreta: ${resultado.length} (esperado: ${numerosPorJogo})` 
+                    };
+                }
+                
+                // Validar se são números válidos (apenas verificar se são números)
+                const numerosValidos = resultado.every(num => {
+                    const numero = parseInt(num);
+                    return !isNaN(numero) && numero > 0;
+                });
+                
+                if (!numerosValidos) {
+                    return { valido: false, motivo: 'Números inválidos encontrados' };
+                }
+                
+                // Validar se não há duplicatas
+                const numerosUnicos = [...new Set(resultado)];
+                if (numerosUnicos.length !== resultado.length) {
+                    return { valido: false, motivo: 'Números duplicados encontrados' };
+                }
+                
+                return { valido: true, motivo: 'Dados válidos' };
+                
             } catch (error) {
-                console.error('Erro ao consultar API da Caixa:', error);
+                console.error('❌ Erro na validação:', error);
+                return { valido: false, motivo: `Erro na validação: ${error.message}` };
+            }
+        }
+        
+        // Função para obter configuração da loteria (compatível com GitHub Pages)
+        function obterConfigLoteria(loteria) {
+            try {
+                // Tentar carregar do localStorage primeiro
+                const cachedConfig = localStorage.getItem(`config_${loteria}`);
+                if (cachedConfig) {
+                    return JSON.parse(cachedConfig);
+                }
+                
+                // Se não estiver em cache, tentar carregar dinamicamente
+                // Usar a configuração já carregada no template
+                if (window.bolaoConfig && window.bolaoConfig.loteria) {
+                    return window.bolaoConfig;
+                }
+                
+                // Se não encontrar, retornar null (não usar configurações fixas)
                 return null;
+            } catch (error) {
+                console.warn(`⚠️ Erro ao obter config de ${loteria}:`, error);
+                return null;
+            }
+        }
+        
+        // Função para salvar no cache local com validação
+        function saveToLocalCache(data, loteria, concurso, origem = 'desconhecida') {
+            try {
+                // Validar dados antes de salvar
+                const validacao = validarDadosCache(data, loteria, concurso);
+                
+                if (!validacao.valido) {
+                    console.warn(`⚠️ Dados inválidos para ${loteria}/${concurso}: ${validacao.motivo}`);
+                    
+                    // Tentar usar fallback do config
+                    const configData = obterConfigLoteria(loteria);
+                    if (configData && configData.boloes && configData.boloes[`bolao-${concurso}`]) {
+                        const bolaoConfig = configData.boloes[`bolao-${concurso}`];
+                        if (bolaoConfig.resultado && bolaoConfig.resultado.length > 0) {
+                            console.log(`🔄 Usando fallback do config para ${loteria}/${concurso}`);
+                            const cacheData = {
+                                data: bolaoConfig.resultado,
+                                timestamp: Date.now(),
+                                loteria: loteria,
+                                concurso: concurso,
+                                origem: 'config-fallback',
+                                validacao: { valido: true, motivo: 'Fallback do config' }
+                            };
+                            
+                            localStorage.setItem(CAIXA_CACHE_KEY, JSON.stringify(cacheData));
+                            console.log(`💾 Cache salvo com fallback: ${loteria}/${concurso}`);
+                            return true;
+                        }
+                    }
+                    
+                    console.error(`❌ Não foi possível salvar cache para ${loteria}/${concurso} - dados inválidos e sem fallback`);
+                    return false;
+                }
+                
+                // Dados válidos, salvar normalmente
+                const cacheData = {
+                    data: data.listaDezenas || data.resultado || [],
+                    timestamp: Date.now(),
+                    loteria: loteria,
+                    concurso: concurso,
+                    origem: origem,
+                    validacao: validacao
+                };
+                
+                localStorage.setItem(CAIXA_CACHE_KEY, JSON.stringify(cacheData));
+                console.log(`💾 Cache salvo com validação: ${loteria}/${concurso} (origem: ${origem})`);
+                return true;
+                
+            } catch (error) {
+                console.warn(`⚠️ Erro ao salvar no cache local: ${loteria}/${concurso}`, error);
+                return false;
+            }
+        }
+
+        // Função para carregar do cache local
+        function loadFromLocalCache(loteria, concurso) {
+            try {
+                const cached = localStorage.getItem(CAIXA_CACHE_KEY);
+                if (cached) {
+                    const cacheData = JSON.parse(cached);
+                    if (isLocalCacheValid(cacheData) && 
+                        cacheData.loteria === loteria && 
+                        cacheData.concurso === concurso) {
+                        return cacheData.data;
+                    }
+                }
+            } catch (error) {
+                console.warn('Erro ao carregar cache local:', error);
+            }
+            return null;
+        }
+
+        // Função para salvar no Firebase (banco principal)
+        async function saveToFirebase(data, loteria, concurso) {
+            try {
+                if (!window.firebaseDb) {
+                    console.warn('Firebase não inicializado');
+                    return false;
+                }
+
+                const docRef = window.firebaseDoc(window.firebaseDb, 'loterias', loteria, concurso.toString());
+                const firebaseData = {
+                    timestamp: window.firebaseServerTimestamp(),
+                    loteria: loteria,
+                    concurso: concurso,
+                    resultado: data.listaDezenas || data.resultado || [],
+                    data: data,
+                    lastUpdated: new Date().toISOString()
+                };
+
+                await window.firebaseSetDoc(docRef, firebaseData);
+                console.log('✅ Dados salvos no Firebase (banco principal)');
+                return true;
+            } catch (error) {
+                console.warn('⚠️ Erro ao salvar no Firebase:', error);
+                return false;
+            }
+        }
+
+        // Função para carregar do Firebase (banco principal)
+        async function loadFromFirebase(loteria, concurso) {
+            try {
+                if (!window.firebaseDb) {
+                    console.warn('Firebase não inicializado');
+                    return null;
+                }
+
+                const docRef = window.firebaseDoc(window.firebaseDb, 'loterias', loteria, concurso.toString());
+                const docSnap = await window.firebaseGetDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    console.log('✅ Dados carregados do Firebase (banco principal)');
+                    return data; // Retorna os dados diretamente
+                } else {
+                    console.log('📭 Concurso não encontrado no Firebase');
+                    return null;
+                }
+            } catch (error) {
+                console.warn('⚠️ Erro ao carregar do Firebase:', error);
+                return null;
+            }
+        }
+
+        // Função para limpar cache local
+        function clearLocalCache() {
+            localStorage.removeItem(CAIXA_CACHE_KEY);
+            console.log('Cache local limpo');
+        }
+
+
+        // Função principal para obter resultado com fallback completo
+        async function obterResultado(loteria, concurso) {
+            console.log(`🔍 Consultando resultado para ${loteria}, concurso ${concurso}...`);
+            
+            // 1. Cache Local (24 horas) - PRIMEIRA PRIORIDADE
+            const localCache = loadFromLocalCache(loteria, concurso);
+            if (localCache && isLocalCacheValid(localCache)) {
+                console.log('✅ Usando dados do cache local (instantâneo)');
+                return localCache;
+            }
+
+            // 2. Firebase (permanente) - SEGUNDA PRIORIDADE
+            try {
+                const firebaseData = await loadFromFirebase(loteria, concurso);
+                if (firebaseData) {
+                    console.log('✅ Usando dados do Firebase (banco principal)');
+                    // Salvar no cache local para próximas consultas
+                    saveToLocalCache(firebaseData, loteria, concurso, 'firebase');
+                    return firebaseData;
+                }
+            } catch (error) {
+                console.warn('⚠️ Firebase falhou:', error);
+            }
+
+            // 3. API da Caixa - TERCEIRA PRIORIDADE
+            try {
+                const url = `https://servicebus2.caixa.gov.br/portaldeloterias/api/${loteria}/${concurso}`;
+                const result = await fetchJsonWithTimeout(url);
+                if (result.ok && result.data) {
+                    console.log('✅ Dados obtidos da API da Caixa');
+                    // Salvar em ambos os caches
+                    saveToLocalCache(result.data, loteria, concurso, 'api');
+                    await saveToFirebase(result.data, loteria, concurso);
+                    return result.data;
+                }
+                console.warn('⚠️ API da Caixa falhou', { status: result.status, statusText: result.statusText, dica: httpStatusHint(result.status) });
+            } catch (error) {
+                console.warn('⚠️ API da Caixa falhou:', error);
+            }
+
+            // 4. Config Local - QUARTA PRIORIDADE
+            if (window.bolaoConfig && window.bolaoConfig.resultado && window.bolaoConfig.resultado.length > 0) {
+                console.log('📋 Usando resultado do config local');
+                return window.bolaoConfig.resultado;
+            }
+
+            // 5. Nenhum resultado disponível
+            console.log('❌ Nenhum resultado disponível - aguardando resultado');
+            return null;
+        }
+
+
+        // Utilidades de API: timeout e logs melhores
+        const API_TIMEOUT_MS = 10000;
+        async function fetchJsonWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const resp = await fetch(url, { ...options, signal: controller.signal });
+                const text = await resp.text();
+                let data = null;
+                try {
+                    data = text ? JSON.parse(text) : null;
+                } catch (e) {
+                    console.warn('Resposta não-JSON da API', { url, status: resp.status, statusText: resp.statusText, sample: text ? text.slice(0, 200) : '' });
+                }
+                if (!resp.ok) {
+                    console.error('Falha na requisição', { url, status: resp.status, statusText: resp.statusText, sample: text ? text.slice(0, 200) : '' });
+                    return { ok: false, status: resp.status, statusText: resp.statusText, data };
+                }
+                return { ok: true, status: resp.status, statusText: resp.statusText, data };
+            } catch (err) {
+                const isAbort = err && err.name === 'AbortError';
+                console.error('Erro de rede/timeout', { url, timeoutMs, abort: isAbort, message: err?.message });
+                return { ok: false, status: 0, statusText: isAbort ? 'Timeout' : 'NetworkError', data: null, error: err?.message };
+            } finally {
+                clearTimeout(id);
+            }
+        }
+        function httpStatusHint(status) {
+            if (status === 404) return 'Recurso não encontrado (verifique loteria/concurso).';
+            if (status >= 500) return 'Serviço da Caixa possivelmente indisponível.';
+            if (status === 0) return 'Sem conexão ou bloqueio de CORS/Timeout.';
+            return 'Falha na requisição.';
+        }
+
+        // Função para consultar API oficial da Caixa com cache duplo (Firebase + Local)
+        async function consultarResultadoCaixa(loteria, concurso) {
+            console.log(`Consultando API da Caixa para ${loteria}, concurso ${concurso}...`);
+            
+            // 1. Primeiro, verificar cache local (mais rápido)
+            const localCache = loadFromLocalCache(loteria, concurso);
+            if (localCache) {
+                console.log('✅ Usando dados do cache local (instantâneo)');
+                return localCache;
+            }
+
+            // 2. Se não tem cache local, verificar Firebase
+            const firebaseCache = await loadFromFirebase(loteria, concurso);
+            if (firebaseCache) {
+                console.log('✅ Usando dados do Firebase (banco principal)');
+                // Salvar no cache local para próximas consultas
+                saveToLocalCache(firebaseCache, loteria, concurso, 'firebase');
+                return firebaseCache;
+            }
+
+            // 3. Se não tem cache em lugar nenhum, consultar API
+            try {
+                const url = `https://servicebus2.caixa.gov.br/portaldeloterias/api/${loteria}/${concurso}`;
+                const result = await fetchJsonWithTimeout(url);
+                if (result.ok && result.data) {
+                    console.log('✅ Dados obtidos da API da Caixa');
+                    // 4. Salvar em ambos os caches
+                    saveToLocalCache(result.data, loteria, concurso, 'api');
+                    await saveToFirebase(result.data, loteria, concurso);
+                    return result.data;
+                }
+                console.warn('⚠️ Erro ao consultar API da Caixa', { status: result.status, statusText: result.statusText, dica: httpStatusHint(result.status) });
+                
+                // 5. Tentar usar cache local mesmo se expirado como último recurso
+                const expiredLocalCache = loadFromLocalCache(loteria, concurso);
+                if (expiredLocalCache) {
+                    console.log('⚠️ Usando cache local expirado como fallback');
+                    return expiredLocalCache;
+                }
+                
+                return null;
+            } catch (error) {
+                console.warn('⚠️ Erro ao consultar API da Caixa:', error);
             }
         }
 
@@ -1294,7 +1704,7 @@
         async function atualizarResultadoAutomatico(loteria, concurso) {
             console.log(`Tentando atualizar resultado automaticamente para ${loteria}, concurso ${concurso}`);
             
-            const dadosCaixa = await consultarResultadoCaixa(loteria, concurso);
+            const dadosCaixa = await obterResultado(loteria, concurso);
             
             if (dadosCaixa) {
                 const numeros = extrairNumerosResultado(dadosCaixa);
@@ -1401,7 +1811,7 @@
                 
                 console.log(`Consultando manualmente: ${loteria}, concurso ${concurso}`);
                 
-                const resultado = await atualizarResultadoAutomatico(loteria, concurso);
+                const resultado = await obterResultado(loteria, concurso);
                 
                 if (resultado) {
                     // Recalcular acertos com o novo resultado

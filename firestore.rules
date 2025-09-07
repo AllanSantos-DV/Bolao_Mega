@@ -1,0 +1,22 @@
+rules_version='2'
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Dados públicos de loterias: leitura pública, escrita bloqueada no cliente
+    match /loterias/{loteria}/{concurso} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Cache (se utilizado): leitura pública, escrita bloqueada
+    match /cache/{loteria}/{concurso} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Bloquear todo o restante por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

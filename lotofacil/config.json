@@ -16,10 +16,6 @@
     "bolao-130": {
       "concurso": "3480",
       "resultado": [3,5,6,8,9,12,13,14,15,16,17,20,21,22,23],
-      "acertos": {
-        "14": 0,
-        "15": 0
-      },
       "planilha": "Bolão independencia - 130.xlsx",
       "cotas": 13,
       "nome": "Bolao 130 Jogos",
@@ -31,10 +27,6 @@
     "bolao-30": {
       "concurso": "3480",
       "resultado": [3,5,6,8,9,12,13,14,15,16,17,20,21,22,23],
-      "acertos": {
-        "14": 0,
-        "15": 0
-      },
       "planilha": "Bolão independencia - 30.xlsx",
       "cotas": 12,
       "nome": "Bolao 30 Jogos",

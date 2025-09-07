@@ -209,6 +209,42 @@
             animation: pulse-red 0.6s ease-in-out;
         }
 
+        /* Resultado fixo quando jogo selecionado */
+        .resultado-section.fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #667eea;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .resultado-section.fixed .resultado-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 20px;
+        }
+
+        .resultado-section.fixed h3 {
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+
+        .resultado-section.fixed .numeros-sorteados {
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        /* Espaçamento para compensar resultado fixo */
+        body.resultado-fixo {
+            padding-top: 120px;
+        }
+
         @keyframes pulse-green {
             0% { transform: scale(1); }
             50% { transform: scale(1.2); }
@@ -286,6 +322,15 @@
         .ganho-valor.null {
             color: #ffc107;
             font-style: italic;
+        }
+        
+        .ganho-valor .apuracao {
+            color: #ffc107;
+            font-weight: bold;
+            background: rgba(255, 193, 7, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
         .ganhos-total {
@@ -908,6 +953,11 @@
                 }
             });
             
+            // Fixar resultado no topo
+            const resultadoSection = document.querySelector('.resultado-section');
+            resultadoSection.classList.add('fixed');
+            document.body.classList.add('resultado-fixo');
+            
             console.log(`Jogo ${jogoIndex + 1} selecionado:`, jogo);
             console.log('Números sorteados destacados:', numerosSorteados);
         }
@@ -926,6 +976,11 @@
             document.querySelectorAll('.numero-sorteado').forEach(numDiv => {
                 numDiv.classList.remove('hit', 'miss');
             });
+            
+            // Remover resultado fixo
+            const resultadoSection = document.querySelector('.resultado-section');
+            resultadoSection.classList.remove('fixed');
+            document.body.classList.remove('resultado-fixo');
             
             console.log('Seleção limpa');
         }
@@ -952,22 +1007,33 @@
                 if (quantidade > 0) {
                     const valorUnitario = valoresCombinados[acertos];
                     
-                    if (valorUnitario !== undefined && valorUnitario !== null) {
+                    if (valorUnitario !== undefined) {
                         temGanhos = true;
-                        const ganhoTotal = quantidade * valorUnitario;
-                        totalGanhos += ganhoTotal;
                         
-                        const valorTexto = valorUnitario === null ? 'A calcular pela caixa' : `R$ ${valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        const classeValor = valorUnitario === null ? 'null' : '';
-                        
-                        ganhosHTML.push(`
-                            <div class="ganho-item has-value">
-                                <div class="ganho-acertos">${acertos} acertos</div>
-                                <div class="ganho-valor ${classeValor}">
-                                    ${quantidade} × ${valorTexto} = R$ ${ganhoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        if (valorUnitario === null) {
+                            // Valor em apuração pela caixa
+                            ganhosHTML.push(`
+                                <div class="ganho-item has-value">
+                                    <div class="ganho-acertos">${acertos} acertos</div>
+                                    <div class="ganho-valor null">
+                                        ${quantidade} × <span class="apuracao">Valor em apuração pela caixa</span>
+                                    </div>
                                 </div>
-                            </div>
-                        `);
+                            `);
+                        } else {
+                            // Valor definido
+                            const ganhoTotal = quantidade * valorUnitario;
+                            totalGanhos += ganhoTotal;
+                            
+                            ganhosHTML.push(`
+                                <div class="ganho-item has-value">
+                                    <div class="ganho-acertos">${acertos} acertos</div>
+                                    <div class="ganho-valor">
+                                        ${quantidade} × R$ ${valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = R$ ${ganhoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+                            `);
+                        }
                     }
                 }
             }
@@ -982,9 +1048,20 @@
                 const totalCotas = bolaoConfig.cotas;
                 const valorPorCota = totalGanhos > 0 ? Math.floor((totalGanhos / totalCotas) * 100) / 100 : 0;
                 
-                const totalTexto = totalGanhos > 0 
-                    ? `Total: R$ ${totalGanhos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Valor por cota: R$ ${valorPorCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : 'Valores a calcular pela caixa';
+                // Verificar se há valores em apuração
+                const temValoresApuracao = ganhosHTML.some(html => html.includes('apuracao'));
+                
+                let totalTexto;
+                if (totalGanhos > 0) {
+                    totalTexto = `Total: R$ ${totalGanhos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Valor por cota: R$ ${valorPorCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    if (temValoresApuracao) {
+                        totalTexto += ' | *Valores em apuração pela caixa';
+                    }
+                } else if (temValoresApuracao) {
+                    totalTexto = 'Valores em apuração pela caixa';
+                } else {
+                    totalTexto = 'Nenhum ganho encontrado';
+                }
                     
                 document.getElementById('ganhos-total').innerHTML = totalTexto;
                 

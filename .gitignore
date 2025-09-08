@@ -47,6 +47,12 @@ build/Release
 # Dependency directories
 node_modules/
 
+# System/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
 # Optional npm cache directory
 .npm
 
@@ -71,6 +77,9 @@ node_modules/
 # Firebase config files
 firebase-config-local.js
 firebase-config.js
+firebase-config.public.js
+firebase-debug.log*
+firebase-debug.*.log*
 
 # Server local configuration
 server-auto.js

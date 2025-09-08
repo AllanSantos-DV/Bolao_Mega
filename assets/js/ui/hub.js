@@ -263,7 +263,9 @@ async function validarTodosConcursos() {
                                         updatedAt: Date.now()
                                     };
                                     await setDoc(ref, payload, { merge: true });
-                                } catch (_) { /* pode falhar por regras de escrita */ }
+                                } catch (err) { 
+                                    console.error('Erro ao salvar no Firestore:', err);
+                                }
                             }
                             atualizarStatusBolao(lot.nome, concurso, true);
                             totalValidados++; viaApi++;

@@ -2,19 +2,30 @@ rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Dados públicos de loterias: leitura pública, escrita bloqueada no cliente
+    // Dados de loterias: leitura pública, escrita com validação
     match /loterias/{loteria}/concursos/{concurso} {
       allow read: if true;
-      allow write: if false;
+      
+      // Permite escrita se:
+      // 1. É criação de documento novo OU
+      // 2. É atualização com dados válidos do sistema
+      allow write: if 
+        // Permite criação (documento não existe)
+        !resource.exists ||
+        // OU permite atualização se vem de fontes confiáveis
+        (request.resource.data.fonte in ['caixa-api', 'firebase', 'config-fallback'] &&
+         request.resource.data.keys().hasAll(['resultado', 'numero']) &&
+         request.resource.data.resultado is list &&
+         request.resource.data.resultado.size() > 0);
     }
 
-    // Cache (se utilizado): leitura pública, escrita bloqueada
+    // Cache: leitura pública, escrita com validação básica
     match /cache/{loteria}/{concurso} {
       allow read: if true;
-      allow write: if false;
+      allow write: if request.resource.data.keys().hasAll(['resultado', 'timestamp']);
     }
 
-    // Bloquear todo o restante por padrão
+    // Bloquear todo o restante
     match /{document=**} {
       allow read, write: if false;
     }

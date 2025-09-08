@@ -9,7 +9,7 @@
     <meta name="cache-buster" content="20241220-002">
     <title id="page-title">Bolão - Carregando...</title>
     <script>
-        window.VERSION = '20241220-002';
+        window.VERSION = Date.now();
         console.log('Versão do sistema:', window.VERSION);
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -109,10 +109,9 @@
     <div data-include="./partials/footer.html"></div>
 
     <script type="module">
-        import { loadIncludes } from './assets/js/ui/includes.js';
-        import { bootstrapBolao } from './assets/js/ui/bolao.js';
-        loadIncludes().catch(() => {});
-        bootstrapBolao().catch(() => {});
+        const v = window.VERSION || Date.now();
+        import(`./assets/js/ui/includes.js?v=${v}`).then(m => m.loadIncludes && m.loadIncludes()).catch(() => {});
+        import(`./assets/js/ui/bolao.js?v=${v}`).then(m => m.bootstrapBolao && m.bootstrapBolao()).catch(() => {});
     </script>
 </body>
 </html>

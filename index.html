@@ -40,10 +40,9 @@
     <div data-include="./partials/footer.html"></div>
 
     <script type="module">
-        import { loadIncludes } from './assets/js/ui/includes.js';
-        import { bootstrapHub } from './assets/js/ui/hub.js';
-        loadIncludes().catch(() => {});
-        bootstrapHub().catch(() => {});
+        const v = window.VERSION || Date.now();
+        import(`./assets/js/ui/includes.js?v=${v}`).then(m => m.loadIncludes && m.loadIncludes()).catch(() => {});
+        import(`./assets/js/ui/hub.js?v=${v}`).then(m => m.bootstrapHub && m.bootstrapHub()).catch(() => {});
     </script>
 </body>
 </html>

@@ -64,8 +64,10 @@
     </div>
 
     <script type="module">
-        import { bootstrapComprovantes } from '../assets/js/ui/comprovantes.js';
-        bootstrapComprovantes().catch(()=>{});
+        const v = window.VERSION || Date.now();
+        import(`../assets/js/ui/comprovantes.js?v=${v}`)
+            .then(m => m.bootstrapComprovantes && m.bootstrapComprovantes())
+            .catch(()=>{});
     </script>
 </body>
 </html>

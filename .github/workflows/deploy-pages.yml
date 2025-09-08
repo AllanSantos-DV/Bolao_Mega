@@ -32,16 +32,16 @@ jobs:
 
       - name: Generate Firebase Config
         run: |
-          cat > firebase-config.public.js << 'EOF'
-          // Configuração pública para front-end (GitHub Pages)
-          // Gerado automaticamente durante o deploy
-          window.FIREBASE_API_KEY = "${{ secrets.FIREBASE_API_KEY }}";
-          window.FIREBASE_AUTH_DOMAIN = "${{ secrets.FIREBASE_AUTH_DOMAIN }}";
-          window.FIREBASE_PROJECT_ID = "${{ secrets.FIREBASE_PROJECT_ID }}";
-          window.FIREBASE_STORAGE_BUCKET = "${{ secrets.FIREBASE_STORAGE_BUCKET }}";
-          window.FIREBASE_MESSAGING_SENDER_ID = "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}";
-          window.FIREBASE_APP_ID = "${{ secrets.FIREBASE_APP_ID }}";
-          EOF
+          echo "// Configuração pública para front-end (GitHub Pages)" > firebase-config.public.js
+          echo "// Gerado automaticamente durante o deploy" >> firebase-config.public.js
+          echo "window.FIREBASE_API_KEY = \"${{ secrets.FIREBASE_API_KEY }}\";" >> firebase-config.public.js
+          echo "window.FIREBASE_AUTH_DOMAIN = \"${{ secrets.FIREBASE_AUTH_DOMAIN }}\";" >> firebase-config.public.js
+          echo "window.FIREBASE_PROJECT_ID = \"${{ secrets.FIREBASE_PROJECT_ID }}\";" >> firebase-config.public.js
+          echo "window.FIREBASE_STORAGE_BUCKET = \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\";" >> firebase-config.public.js
+          echo "window.FIREBASE_MESSAGING_SENDER_ID = \"${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}\";" >> firebase-config.public.js
+          echo "window.FIREBASE_APP_ID = \"${{ secrets.FIREBASE_APP_ID }}\";" >> firebase-config.public.js
+          echo "Arquivo firebase-config.public.js gerado:"
+          cat firebase-config.public.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

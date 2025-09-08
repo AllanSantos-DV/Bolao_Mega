@@ -2,150 +2,114 @@
 
 ## 📋 Visão Geral
 
-Sistema completo de gerenciamento de bolões para loterias, desenvolvido para funcionar com GitHub Pages. Permite criar, gerenciar e visualizar bolões de diferentes modalidades de loteria.
+Sistema estático para hub e visualização de bolões (Lotofácil e outras), pronto para GitHub Pages e com suporte a Firebase (Firestore) para cache de resultados.
 
-## 🏗️ Estrutura do Sistema
+## 🏗️ Estrutura Atual (modular)
 
 ```
 Bolao_Mega/
-├── 📄 index.html                          # Hub principal
-├── 📁 lotofacil/                          # Pasta da Lotofácil
-│   ├── 📄 Bolão independencia - 130.xlsx  # Planilha do bolão
-│   ├── 📄 bolao-130.html                  # HTML do bolão
-│   ├── 📄 config.json                     # Configuração
-│   └── 📄 resultado.txt                   # Resultado
-├── 📁 comprovantes/                       # Pasta de comprovantes
-│   └── 📁 lotofacil/
-│       └── 📁 comprovantes-lotofacil-3480/ # PDFs específicos
-└── 📄 ARQUITETURA.md                      # Documentação técnica
+├── index.html                     # Hub principal
+├── bolao-template.html            # Template de página de bolão
+├── comprovantes/
+│   └── index.html                 # Página de comprovantes (JS/CSS externos)
+├── assets/
+│   ├── css/
+│   │   ├── hub.css
+│   │   ├── bolao.css
+│   │   ├── comprovantes.css
+│   │   └── 404.css
+│   └── js/
+│       ├── api/
+│       │   ├── http.js           # fetch com timeout e logs
+│       │   └── caixa.js          # API da Caixa (usa http.js)
+│       ├── data/
+│       │   └── cache.js          # cache local (localStorage)
+│       ├── domain/
+│       │   └── loterias.js       # validações e comparações de resultados
+│       ├── firebase/
+│       │   └── init.js           # inicialização do Firebase (SDK oficial)
+│       └── ui/
+│           ├── hub.js            # entrypoint do hub
+│           ├── bolao.js          # entrypoint do template
+│           ├── comprovantes.js   # entrypoint da página de comprovantes
+│           └── includes.js       # loader de includes client-side
+├── partials/
+│   ├── cache-control.html         # sem onclick; eventos ligados no hub.js
+│   └── footer.html
+├── loterias/
+│   ├── index.json
+│   └── lotofacil/
+│       ├── config.json
+│       ├── Bolão independencia - 130.xlsx
+│       └── Bolão independencia - 30.xlsx
+├── docs/
+│   ├── ARQUITETURA.md
+│   └── README-LOCAL.md
+├── server-auto.js                 # servidor local com .env em Documentos
+├── firebase.json                  # config de hosting/firestore
+├── firestore.rules                # regras endurecidas (leitura pública; escrita bloqueada)
+├── firestore.indexes.json
+└── README.md
 ```
 
 ## 🚀 Como Usar
 
-### 1. Acessar o Sistema
-
-#### **Desenvolvimento Local:**
-**IMPORTANTE:** Para funcionar corretamente, o sistema deve ser executado em um servidor HTTP (não pode ser aberto diretamente no navegador).
-
-**Opção 1 - Servidor Python (Recomendado):**
-```bash
-python -m http.server 8000
+### Desenvolvimento Local
+- Requer servidor HTTP (não abrir por file://).
+- Com Node.js:
 ```
-Depois acesse: `http://localhost:8000`
-
-**Opção 2 - Servidor Node.js:**
-```bash
-npx http-server -p 8000
+npm run start
 ```
-Depois acesse: `http://localhost:8000`
+- Abre em: `http://localhost:3000`
+- `server-auto.js` carrega `.env` de: `~/Documents/mega bolao/.env`
 
-#### **GitHub Pages (Produção):**
-O sistema está configurado para funcionar automaticamente no GitHub Pages. Após fazer push do código:
+Variáveis esperadas (ver `env.example`):
+- FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET, FIREBASE_MESSAGING_SENDER_ID, FIREBASE_APP_ID, PORT
 
-1. Vá em **Settings** → **Pages**
-2. Selecione **Deploy from a branch**
-3. Escolha **main** branch
-4. Acesse: `https://seu-usuario.github.io/Bolao_Mega`
+### Produção (GitHub Pages)
+- Faça push para a branch configurada no Pages.
+- A aplicação funciona como estática. Observações:
+  - A rota dinâmica `/firebase-config.js` não existe no Pages. Use configuração estática para produção (ou defina um arquivo gerado no build) se precisar do Firebase em produção via Pages.
+  - Roteamento: `404.html` presente e com CSS externo.
+  - Versionamento de assets com `?v=${window.VERSION}` para evitar cache agressivo.
 
-**Opção 3 - GitHub Pages:**
-- Faça upload dos arquivos para um repositório GitHub
-- Ative o GitHub Pages nas configurações do repositório
-- Acesse o link fornecido pelo GitHub Pages
+## 🔌 Firebase e Firestore
+- Hub e template usam SDK oficial do Firebase via gstatic.
+- Estrutura no Firestore: `loterias/{loteria}/{concurso}` (doc id = concurso).
+- Regras (`firestore.rules`): leitura pública dos caminhos de loterias e cache; escrita bloqueada (produção).
 
-- O hub principal detectará automaticamente as loterias disponíveis
+## 📦 Cache e API da Caixa
+- Ordem de consulta (hub e template):
+  1) Cache local (localStorage) por 24h
+  2) Firebase (se disponível)
+  3) API oficial da Caixa
+  4) Config local (fallback)
+- Módulos relevantes: `assets/js/api/http.js`, `assets/js/api/caixa.js`, `assets/js/data/cache.js`, `assets/js/domain/loterias.js`.
 
-### 2. Visualizar Bolões
-- Clique em "Acessar Bolão" para ver um bolão específico
-- Cada bolão tem sua própria página HTML com:
-  - Informações do bolão (cotas, jogos, modalidade)
-  - Download da planilha e comprovantes
-  - Números sorteados (quando disponível)
-  - Contagem automática de acertos
-  - Lista de jogos com destaque visual
+## 🧩 Includes Client-side
+- Partials em `partials/` são injetados com `[data-include]` via `assets/js/ui/includes.js`.
+- Ex.: `<div data-include="./partials/footer.html"></div>`
+- Botões do `cache-control.html` são ligados via `addEventListener` em `hub.js` (sem `onclick`).
 
-### 3. Adicionar Resultados
-- Edite o arquivo `resultado.txt` na pasta da loteria
-- Formato: `CONCURSO-NUM1-NUM2-NUM3-...`
-- Exemplo: `3480-01-02-03-04-05-06-07-08-09-10-11-12-13-14-15`
+## 🗂️ Manifesto de Loterias
+- O hub carrega `./loterias/index.json` para descobrir quais loterias exibir.
+- Para cada item do manifesto, o hub busca `./loterias/{loteria}/config.json`.
+- Para adicionar uma nova loteria:
+  1) Crie a pasta `loterias/{loteria}/` com `config.json` e arquivos necessários (ex.: planilhas).
+  2) Atualize `loterias/index.json` adicionando o nome da loteria.
+  3) (Opcional) Adicione comprovantes em `comprovantes/{loteria}/...` e aponte a pasta no `config.json`.
 
-## ⚙️ Configuração
+## ✅ Validação Rápida
+- Rodar `npm start` e abrir o hub.
+- Verificar no console:
+  - Carregamento de `config.json` da loteria
+  - Carregamento de partials
+  - Consultas à API da Caixa (com logs/timeout)
+  - Cache local sendo lido/salvo
+  - Acesso ao Firestore (se `.env` configurado)
 
-### Arquivo config.json
-```json
-{
-  "loteria": {
-    "modalidade": "Lotofácil",
-    "concurso": "3480",
-    "numeros_por_jogo": 15,
-    "range_acertos": {"minimo": 11, "maximo": 15}
-  },
-  "boloes": {
-    "bolao-130": {
-      "planilha": "Bolão independencia - 130.xlsx",
-      "cotas": 13,
-      "nome": "Bolão 130 Jogos",
-      "comprovantes": {"pasta": "comprovantes-lotofacil-3480"}
-    }
-  }
-}
-```
-
-## 📊 Funcionalidades
-
-### ✅ Implementadas
-- **Hub principal** com detecção automática de loterias
-- **Páginas individuais** para cada bolão
-- **Leitura de planilhas Excel** usando SheetJS
-- **Contagem automática** de acertos
-- **Destaque visual** de números acertados
-- **Download de arquivos** (planilhas e comprovantes)
-- **Interface responsiva** e moderna
-- **Atualização automática** de status
-
-### 🔧 Características Técnicas
-- **JavaScript vanilla** (sem dependências externas além do SheetJS)
-- **Compatível com GitHub Pages**
-- **Leitura automática** de configurações
-- **Fallback** para jogos simulados em caso de erro
-- **Processamento dinâmico** de dados
-
-## 📱 Compatibilidade
-
-- ✅ **GitHub Pages**
-- ✅ **Navegadores modernos** (Chrome, Firefox, Safari, Edge)
-- ✅ **Dispositivos móveis** (responsivo)
-- ✅ **Arquivos estáticos** (sem backend necessário)
-
-## 🎯 Modalidades Suportadas
-
-- **Lotofácil** (15 números por jogo)
-- **Mega-Sena** (6 números por jogo)
-- **Quina** (5 números por jogo)
-- **Lotomania** (20 números por jogo)
-
-## 📈 Próximos Passos
-
-1. **Adicionar mais bolões** conforme necessário
-2. **Implementar outras modalidades** de loteria
-3. **Melhorar interface** com mais recursos visuais
-4. **Adicionar estatísticas** avançadas
-5. **Implementar notificações** de resultados
-
-## 🛠️ Desenvolvimento
-
-### Para Adicionar Nova Loteria:
-1. Criar pasta com nome da loteria
-2. Adicionar `config.json` com configurações
-3. Adicionar planilhas Excel dos bolões
-4. Criar HTMLs individuais para cada bolão
-5. Adicionar pasta de comprovantes se necessário
-
-### Para Adicionar Novo Bolão:
-1. Adicionar entrada no `config.json`
-2. Criar arquivo HTML correspondente
-3. Adicionar planilha Excel
-4. Configurar pasta de comprovantes
-
----
-
-**Sistema desenvolvido com foco em simplicidade, eficiência e compatibilidade com GitHub Pages.**
+## 📚 Notas de Manutenção
+- Módulos ESM com caminhos relativos (compatível com GitHub Pages).
+- Versionamento de assets com `?v=window.VERSION` para evitar cache agressivo.
+- Preferir centralização de lógica em `assets/js/` (evitar duplicação em HTMLs).
+- Documentação local em `docs/`.

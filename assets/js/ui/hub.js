@@ -192,8 +192,12 @@ function atualizarCacheLoterias() {
 
 async function validarTodosConcursos() {
     const statusDiv = document.getElementById('validation-status');
+    const btn = document.getElementById('validation-btn-validar');
     if (!statusDiv) return;
-    statusDiv.innerHTML = `<div class="result">🔄 Iniciando validação de todos os concursos...</div>`;
+    // manter área estável para evitar "pulo" na UI
+    statusDiv.style.minHeight = '120px';
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; btn.style.pointerEvents = 'none'; }
+    statusDiv.innerHTML = `<div class=\"result\">🔄 Iniciando validação de todos os concursos...</div>`;
     try {
         const loterias = await obterLoteriasDisponiveis();
         const firebase = await initFirebase().catch(() => null);
@@ -287,7 +291,9 @@ async function validarTodosConcursos() {
         statusDiv.innerHTML = `<div class=\"result\"><strong>✅ Validação concluída!</strong><br/>✅ Validados: ${totalValidados}<br/>❌ Erros: ${totalErros}<br/>📭 Sem dados: ${totalSemDados}<br/><br/><strong>Origens:</strong><br/>• Cache: ${viaCache}<br/>• Firebase: ${viaFirebase}<br/>• API: ${viaApi}<br/>• Config: ${viaConfig}</div>`;
         renderCacheCard();
     } catch (_) {
-        statusDiv.innerHTML = `<div class="result">❌ Erro na validação.</div>`;
+        statusDiv.innerHTML = `<div class=\"result\">❌ Erro na validação.</div>`;
+    } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.pointerEvents = ''; }
     }
 }
 
@@ -312,7 +318,13 @@ function renderCacheCard() {
         const card = document.createElement('div');
         card.id = 'cache-card';
         card.className = 'loteria-card';
-        content.insertBefore(card, content.firstChild);
+        // posicionar SEM mover o card de validação
+        const validationCard = document.getElementById('validation-card');
+        if (validationCard && validationCard.parentNode === content) {
+            validationCard.insertAdjacentElement('afterend', card);
+        } else {
+            content.insertBefore(card, content.firstChild);
+        }
         const keys = Object.keys(localStorage).filter(k => k.startsWith('caixa_api_cache_'));
         const hasItems = keys.length > 0;
         const rows = [];

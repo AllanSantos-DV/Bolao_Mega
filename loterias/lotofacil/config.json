@@ -34,6 +34,17 @@
       "comprovantes": {
         "pasta": "comprovantes/lotofacil/bolao-30"
       }
+    },
+    "bolao-47": {
+      "concurso": "3487",
+      "resultado": [],
+      "planilha": "bolao - 47.xlsx",
+      "cotas": 11,
+      "nome": "Bolao 47 Jogos",
+      "data_sorteio": "15/09/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-47"
+      }
     }
   }
 }

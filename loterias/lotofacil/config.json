@@ -37,7 +37,7 @@
     },
     "bolao-47": {
       "concurso": "3487",
-      "resultado": [],
+      "resultado": [2,4,5,7,10,12,13,15,16,17,18,19,21,22,23],
       "planilha": "bolao - 47.xlsx",
       "cotas": 11,
       "nome": "Bolao 47 Jogos",
@@ -48,7 +48,7 @@
     },
     "bolao-40": {
       "concurso": "3487",
-      "resultado": [],
+      "resultado": [2,4,5,7,10,12,13,15,16,17,18,19,21,22,23],
       "planilha": "bolao - 40.xlsx",
       "cotas": 1,
       "nome": "Bolao 40 Jogos",

@@ -309,8 +309,21 @@ export async function bootstrapBolao() {
         const acertos = calcularAcertos(window.jogosAtuais, numeros);
         destacarAcertosNosJogos(window.jogosAtuais, numeros);
         if (!premiacaoAtual && cacheObj && Array.isArray(cacheObj.premiacao)) premiacaoAtual = cacheObj.premiacao;
-        const map = premiacaoToMap(premiacaoAtual || []);
-        renderGanhos(acertos, map, bolaoConfig.cotas);
+        // Merge de premiação: valores fixos do config (11-13) + API + pagosExtras (14/15) do cache
+        const fixed = (config && config.loteria && config.loteria.acertos) ? config.loteria.acertos : {};
+        const fixedMap = {};
+        ['11','12','13'].forEach(k => {
+            const v = Number(fixed[k]);
+            if (!Number.isNaN(v)) fixedMap[Number(k)] = v;
+        });
+        const apiMap = premiacaoToMap(premiacaoAtual || []);
+        const mergedMap = { ...fixedMap, ...apiMap };
+        if (cacheObj && cacheObj.pagosExtras) {
+            const extras = cacheObj.pagosExtras;
+            if (extras[14] != null && !Number.isNaN(Number(extras[14]))) mergedMap[14] = Number(extras[14]);
+            if (extras[15] != null && !Number.isNaN(Number(extras[15]))) mergedMap[15] = Number(extras[15]);
+        }
+        renderGanhos(acertos, mergedMap, bolaoConfig.cotas);
     }
 }
 

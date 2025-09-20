@@ -57,13 +57,57 @@
         "pasta": "comprovantes/lotofacil/bolao-40"
       }
     },
-    "bolao-08": {
+    "bolao-08 - 1/5": {
+      "concurso": "3490",
+      "resultado": [],
+      "planilha": "bolao - 08.xlsx",
+      "cotas": 5,
+      "nome": "Bolao 08 Jogos",
+      "data_sorteio": "18/09/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-08"
+      }
+    },
+    "bolao-08 - 2/5": {
       "concurso": "3491",
       "resultado": [],
       "planilha": "bolao - 08.xlsx",
       "cotas": 5,
       "nome": "Bolao 08 Jogos",
       "data_sorteio": "19/09/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-08"
+      }
+    },
+    "bolao-08 - 3/5": {
+      "concurso": "3492",
+      "resultado": [],
+      "planilha": "bolao - 08.xlsx",
+      "cotas": 5,
+      "nome": "Bolao 08 Jogos",
+      "data_sorteio": "20/09/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-08"
+      }
+    },
+    "bolao-08 - 4/5": {
+      "concurso": "3493",
+      "resultado": [],
+      "planilha": "bolao - 08.xlsx",
+      "cotas": 5,
+      "nome": "Bolao 08 Jogos",
+      "data_sorteio": "22/09/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-08"
+      }
+    },
+    "bolao-08 - 5/5": {
+      "concurso": "3494",
+      "resultado": [],
+      "planilha": "bolao - 08.xlsx",
+      "cotas": 5,
+      "nome": "Bolao 08 Jogos",
+      "data_sorteio": "23/09/2025",
       "comprovantes": {
         "pasta": "comprovantes/lotofacil/bolao-08"
       }

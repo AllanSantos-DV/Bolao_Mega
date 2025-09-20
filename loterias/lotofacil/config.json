@@ -111,6 +111,28 @@
       "comprovantes": {
         "pasta": "comprovantes/lotofacil/bolao-08"
       }
+    },
+    "Allan": {
+      "concurso": "3492",
+      "resultado": [],
+      "planilha": "Allan.xlsx",
+      "cotas": 1,
+      "nome": "Allan. Não Jogado. Apenas para controle",
+      "data_sorteio": "20/09/2025",
+      "comprovantes": {
+        "pasta": ""
+      }
+    },
+    "Josue": {
+      "concurso": "3492",
+      "resultado": [],
+      "planilha": "Josue.xlsx",
+      "cotas": 1,
+      "nome": "Josue. Não Jogado. Apenas para controle",
+      "data_sorteio": "20/09/2025",
+      "comprovantes": {
+        "pasta": ""
+      }
     }
   }
 }

@@ -25,14 +25,75 @@ function setBasicInfo(config, bolaoId) {
     el('info-data').textContent = bolao.data_sorteio || 'A definir';
 }
 
-function updateStatusByResultado(config, bolaoId) {
+async function updateStatusByResultado(config, bolaoId) {
     const bolao = config.boloes[bolaoId];
     const statusEl = document.getElementById('info-status');
+    const concurso = bolao.concurso;
+    const loteria = config.loteria.modalidade.toLowerCase();
+    
+    console.log(`🔍 Verificando resultado para ${loteria}/${concurso}`);
+    
+    // 1. Verificar cache válido primeiro
+    try {
+        const { loadFromLocalCache } = await import('../data/cache.js');
+        // Cache válido por 24 horas (86400000 ms)
+        const cached = loadFromLocalCache(loteria, concurso, 86400000);
+        if (cached && cached.validacao && cached.validacao.valido) {
+            console.log(`✅ Cache válido encontrado para ${loteria}/${concurso}`);
+            statusEl.textContent = 'Resultado disponível';
+            statusEl.style.color = '#28a745';
+            return true;
+        }
+    } catch (error) {
+        console.log(`⚠️ Erro ao verificar cache: ${error.message}`);
+    }
+    
+    // 2. Verificar Firebase
+    try {
+        const { initFirebase } = await import('../firebase/init.js');
+        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        
+        const { db } = await initFirebase();
+        if (db) {
+            const ref = doc(db, 'loterias', loteria, 'concursos', String(concurso));
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data && Array.isArray(data.resultado) && data.resultado.length > 0) {
+                    console.log(`✅ Dados Firebase encontrados para ${loteria}/${concurso}`);
+                    statusEl.textContent = 'Resultado disponível';
+                    statusEl.style.color = '#28a745';
+                    return true;
+                }
+            }
+        }
+    } catch (error) {
+        console.log(`⚠️ Erro ao verificar Firebase: ${error.message}`);
+    }
+    
+    // 3. Verificar API da Caixa
+    try {
+        const { fetchCaixaResultado } = await import('../api/caixa.js');
+        const resultado = await fetchCaixaResultado(loteria, concurso);
+        if (resultado && Array.isArray(resultado.listaDezenas) && resultado.listaDezenas.length > 0) {
+            console.log(`✅ Dados API Caixa encontrados para ${loteria}/${concurso}`);
+            statusEl.textContent = 'Resultado disponível';
+            statusEl.style.color = '#28a745';
+            return true;
+        }
+    } catch (error) {
+        console.log(`⚠️ Erro ao verificar API Caixa: ${error.message}`);
+    }
+    
+    // 4. Última opção: Config.json
     if (bolao && Array.isArray(bolao.resultado) && bolao.resultado.length > 0) {
+        console.log(`✅ Dados config.json encontrados para ${loteria}/${concurso}`);
         statusEl.textContent = 'Resultado disponível';
         statusEl.style.color = '#28a745';
         return true;
     }
+    
+    console.log(`❌ Nenhum resultado encontrado para ${loteria}/${concurso}`);
     statusEl.textContent = 'Aguardando resultado';
     statusEl.style.color = '#ffc107';
     return false;
@@ -97,7 +158,7 @@ export async function bootstrapComprovantes() {
         return;
     }
     setBasicInfo(config, bolaoId);
-    updateStatusByResultado(config, bolaoId);
+    await updateStatusByResultado(config, bolaoId);
     const arquivos = await detectPdfs(pasta);
     displayComprovantes(arquivos, pasta);
 }

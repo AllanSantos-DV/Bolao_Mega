@@ -10,7 +10,9 @@ function getQueryParams() {
 
 async function fetchConfig(loteria) {
     try {
-        let response = await fetch(`./loterias/${loteria}/config.json?v=${window.VERSION}`);
+        const configUrl = `../loterias/${loteria}/config.json?v=${window.VERSION}`;
+        console.log(`📋 Carregando config: ${configUrl}`);
+        let response = await fetch(configUrl);
         if (response.ok) return await response.json();
     } catch (_) {}
     return null;
@@ -25,8 +27,10 @@ function setBasicInfo(config, bolaoConfig) {
     el('info-modalidade').textContent = config.loteria.modalidade;
     el('info-concurso').textContent = bolaoConfig.concurso;
     el('total-cotas').textContent = bolaoConfig.cotas;
-    el('download-planilha').href = `./loterias/${window.LOTERIA}/${bolaoConfig.planilha}?v=${window.VERSION}`;
-    el('download-comprovantes').href = `./comprovantes/index.html?loteria=${window.LOTERIA}&bolao=${window.BOLAO_ID}&pasta=${bolaoConfig.comprovantes.pasta}`;
+    el('download-planilha').href = `../loterias/${window.LOTERIA}/${encodeURIComponent(bolaoConfig.planilha)}?v=${window.VERSION}`;
+    const comprovantesUrl = `../comprovantes/index.html?loteria=${window.LOTERIA}&bolao=${window.BOLAO_ID}&pasta=${bolaoConfig.comprovantes.pasta}`;
+        console.log(`📄 Comprovantes: ${comprovantesUrl}`);
+    el('download-comprovantes').href = comprovantesUrl;
 }
 
 function displayResultado(numeros, tipo = 'config') {
@@ -46,6 +50,7 @@ function displayResultado(numeros, tipo = 'config') {
 function displayJogos(jogos) {
     const container = document.getElementById('jogos-grid');
     container.innerHTML = '';
+        // console.log(`🎮 Exibindo ${jogos.length} jogos`);
     jogos.forEach((jogo, index) => {
         const div = document.createElement('div');
         div.className = 'jogo-item';
@@ -262,7 +267,9 @@ function renderGanhos(acertosPorFaixa, premiacaoMap, totalCotas) {
 
 async function loadJogos(bolaoConfig) {
     try {
-        const response = await fetch(`./loterias/${window.LOTERIA}/${bolaoConfig.planilha}?v=${window.VERSION}`);
+        const planilhaUrl = `../loterias/${window.LOTERIA}/${encodeURIComponent(bolaoConfig.planilha)}?v=${window.VERSION}`;
+        console.log(`📊 Carregando planilha: ${planilhaUrl}`);
+        const response = await fetch(planilhaUrl);
         if (!response.ok) throw new Error(`Planilha não encontrada: ${response.status}`);
         const arrayBuffer = await response.arrayBuffer();
         const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
@@ -274,26 +281,35 @@ async function loadJogos(bolaoConfig) {
             const row = jsonData[i];
             if (row && row.length >= 15) {
                 const numeros = row.filter(cell => typeof cell === 'number' && cell >= 1 && cell <= 25);
-                if (numeros.length === 15) jogos.push(numeros);
+                if (numeros.length === 15) {
+                    jogos.push(numeros);
+                    // console.log(`✅ Jogo ${jogos.length} adicionado:`, numeros);
+                }
             }
         }
         if (jogos.length === 0) throw new Error('Nenhum jogo válido encontrado na planilha');
+        // console.log(`🎯 Total de jogos carregados: ${jogos.length}`);
         displayJogos(jogos);
         document.getElementById('total-jogos').textContent = jogos.length;
         window.jogosAtuais = jogos;
     } catch (error) {
         console.error('Erro ao carregar jogos:', error);
-        const jogosSimulados = [
-            [2,3,4,6,7,8,10,11,15,16,17,18,22,23,25],
-            [1,2,3,6,7,8,9,10,12,15,16,17,19,21,22],
-            [1,3,4,5,6,7,8,10,15,16,17,18,20,22,23],
-            [2,4,5,7,9,11,13,14,16,18,19,21,23,24,25],
-            [1,3,6,8,10,12,13,15,17,18,20,21,22,24,25]
-        ];
-        displayJogos(jogosSimulados);
-        document.getElementById('total-jogos').textContent = jogosSimulados.length;
-        window.jogosAtuais = jogosSimulados;
-        document.getElementById('loading-jogos').innerHTML = `<div class=\"error\">Erro ao carregar planilha: ${error.message}. Usando jogos de exemplo.</div>`;
+        
+        // Mostrar erro na interface
+        const container = document.getElementById('jogos-grid');
+        container.innerHTML = `
+            <div class="error-message">
+                <h4>❌ Erro ao carregar planilha</h4>
+                <p><strong>Arquivo:</strong> ${bolaoConfig.planilha}</p>
+                <p><strong>Erro:</strong> ${error.message}</p>
+                <p><strong>Solução:</strong> Verifique se o arquivo existe e está acessível</p>
+            </div>
+        `;
+        
+        document.getElementById('loading-jogos').style.display = 'none';
+        container.style.display = 'grid';
+        document.getElementById('total-jogos').textContent = '0';
+        window.jogosAtuais = [];
     }
 }
 
@@ -328,38 +344,8 @@ async function obterResultado(loteria, concurso) {
             return cache;
         }
         
-        // Se cache é do config, verificar se Firebase tem dados melhores
-        if (cache.origem === 'config-fallback') {
-            const firebaseHasData = await checkFirebaseHasData(loteria, concurso);
-            if (firebaseHasData) {
-                console.log(`🔄 Cache do config encontrado, mas Firebase tem dados para ${loteria}/${concurso} - buscando Firebase`);
-                // Buscar dados do Firebase
-                try {
-                    const { initFirebase } = await import('../firebase/init.js');
-                    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                    
-                    const { db } = await initFirebase();
-                    if (db) {
-                        const ref = doc(db, 'loterias', loteria, 'concursos', String(concurso));
-                        const snap = await getDoc(ref);
-                        if (snap.exists()) {
-                            const data = snap.data();
-                            const numeros = extractResultadoArray(data);
-                            if (Array.isArray(numeros) && numeros.length > 0) {
-                                console.log(`✅ Dados do Firebase encontrados para ${loteria}/${concurso}`);
-                                await saveToLocalCache({ ...data, fonte: 'firebase' }, loteria, concurso, 'firebase');
-                                return { ...data, fonte: 'firebase' };
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.log(`⚠️ Erro ao buscar Firebase para ${loteria}/${concurso}:`, error.message);
-                }
-            } else {
-                console.log(`📦 Usando cache do config para ${loteria}/${concurso}`);
-                return cache;
-            }
-        }
+        // Sem fallback - apenas dados reais
+        return null;
     }
     
     console.log(`❌ Nenhum resultado disponível para ${loteria}/${concurso}`);
@@ -374,7 +360,8 @@ export async function bootstrapBolao() {
         document.querySelector('.content').innerHTML = '<div class=\"error\">Parâmetros inválidos. Use: ?loteria=nome&bolao=id</div>';
         return;
     }
-    await initFirebase().catch(()=>{});
+    // Remover chamada desnecessária ao Firebase
+    // await initFirebase().catch(()=>{});
     const config = await fetchConfig(loteria);
     if (!config) { document.querySelector('.content').innerHTML = '<div class=\"error\">Erro ao carregar configuração do bolão</div>'; return; }
     const bolaoConfig = config.boloes[bolaoId];

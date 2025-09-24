@@ -30,19 +30,16 @@ async function getFirebaseCredentials() {
         const response = await fetch('/api/firebase-auth');
         if (response.ok) {
             const credentials = await response.json();
-            console.log('🔐 Credenciais carregadas do servidor local');
+            // console.log('🔐 Credenciais carregadas do servidor local');
             return credentials;
         }
     } catch (error) {
         console.warn('⚠️ Servidor local não disponível');
     }
     
-    // Fallback para desenvolvimento local
-    console.warn('⚠️ Usando credenciais de desenvolvimento local');
-    return {
-        email: 'DEV_EMAIL_PLACEHOLDER',
-        password: 'DEV_PASSWORD_PLACEHOLDER'
-    };
+    // Sem fallback - deve falhar se não conseguir carregar
+    console.error('❌ Credenciais Firebase não encontradas');
+    throw new Error('FIREBASE_AUTH_EMAIL e FIREBASE_AUTH_PASSWORD devem estar configuradas');
 }
 
 export async function loadFirebaseConfig() {
@@ -50,7 +47,7 @@ export async function loadFirebaseConfig() {
     
     // Carregar configuração do GitHub Pages
     try {
-        const resp = await fetch(`./firebase-config.public.js${version}`);
+        const resp = await fetch(`../firebase-config.public.js${version}`);
         if (resp.ok) {
             const script = await resp.text();
             eval(script);
@@ -83,7 +80,36 @@ export async function loadFirebaseConfig() {
     throw new Error('Failed to load Firebase configuration');
 }
 
+// Singleton para evitar múltiplas inicializações
+let firebaseInstance = null;
+let initPromise = null;
+
 export async function initFirebase() {
+    // Se já foi inicializado, retornar a instância existente
+    if (firebaseInstance) {
+        // console.log('🔄 Firebase já inicializado, reutilizando instância');
+        return firebaseInstance;
+    }
+    
+    // Se já está sendo inicializado, aguardar a promessa existente
+    if (initPromise) {
+        // console.log('⏳ Firebase já está sendo inicializado, aguardando...');
+        return await initPromise;
+    }
+    
+    // Inicializar Firebase pela primeira vez
+    console.log('🚀 Inicializando Firebase pela primeira vez...');
+    initPromise = _initFirebase();
+    
+    try {
+        firebaseInstance = await initPromise;
+        return firebaseInstance;
+    } finally {
+        initPromise = null;
+    }
+}
+
+async function _initFirebase() {
     const config = await loadFirebaseConfig();
     const app = initializeApp(config);
     const db = getFirestore(app);
@@ -94,7 +120,7 @@ export async function initFirebase() {
         const credentials = await getFirebaseCredentials();
         
         // Tenta fazer login com o usuário da aplicação
-        console.log('🔐 Tentando autenticar usuário da aplicação...');
+        // console.log('🔐 Tentando autenticar usuário da aplicação...');
         await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
         console.log('✅ Login do usuário da aplicação no Firebase bem-sucedido!');
     } catch (error) {

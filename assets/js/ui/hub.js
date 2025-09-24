@@ -92,7 +92,7 @@ function criarCardLoteria(loteriaData, statusBoloes = {}) {
                         <div class="bolao-info-item"><strong>Data:</strong> ${bolao.data_sorteio}</div>
                         <div class="bolao-info-item"><strong>Números:</strong> ${loteria.numeros_por_jogo}</div>
                     </div>
-                    <a href="./bolao-template.html?loteria=${nome}&bolao=${id}" class="bolao-link" target="_blank">Acessar Bolão</a>
+                    <a href="./pages/bolao-template.html?loteria=${nome}&bolao=${id}" class="bolao-link" target="_blank">Acessar Bolão</a>
                 </div>
             `;
     }).join('');
@@ -207,9 +207,10 @@ async function validarTodosConcursos() {
     statusDiv.innerHTML = `<div class=\"result\">🔄 Iniciando validação de todos os concursos...</div>`;
     try {
         const loterias = await obterLoteriasDisponiveis();
-        const firebase = await initFirebase().catch(() => null);
-        const db = firebase?.db || null;
-        const { doc, getDoc, setDoc, serverTimestamp } = db ? await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js') : { };
+        // Firebase será inicializado apenas quando necessário
+        let firebase = null;
+        let db = null;
+        let doc, getDoc, setDoc, serverTimestamp;
         let totalValidados = 0, totalErros = 0, totalSemDados = 0;
         let viaCache = 0, viaFirebase = 0, viaApi = 0, viaConfig = 0;
 
@@ -230,19 +231,7 @@ async function validarTodosConcursos() {
                             viaCache++; 
                             continue; 
                         }
-                        // Se cache é do config, verificar se Firebase tem dados melhores
-                        if (cached.origem === 'config-fallback') {
-                            const firebaseHasData = await checkFirebaseHasData(lot.nome, concurso);
-                            if (firebaseHasData) {
-                                console.log(`🔄 Cache do config encontrado, mas Firebase tem dados para ${lot.nome}/${concurso} - buscando Firebase`);
-                                // Não usar cache do config, buscar Firebase
-                            } else {
-                                atualizarStatusBolao(lot.nome, concurso, true); 
-                                totalValidados++; 
-                                viaCache++; 
-                                continue; 
-                            }
-                        }
+                        // Sem fallback de config - apenas dados reais
                     }
 
                     // 2) Firebase
@@ -271,6 +260,23 @@ async function validarTodosConcursos() {
                         if (res?.ok && res.data) {
                             dadosApi = res.data;
                             await saveToLocalCache(dadosApi, lot.nome, concurso, 'api');
+                            
+                            // Inicializar Firebase apenas quando necessário (quando há dados da API para salvar)
+                            if (!firebase) {
+                                try {
+                                    firebase = await initFirebase();
+                                    db = firebase.db;
+                                    const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                                    doc = firestoreModule.doc;
+                                    getDoc = firestoreModule.getDoc;
+                                    setDoc = firestoreModule.setDoc;
+                                    serverTimestamp = firestoreModule.serverTimestamp;
+                                    // console.log('🔥 Firebase inicializado para salvar dados da API');
+                                } catch (err) {
+                                    console.warn('⚠️ Não foi possível inicializar Firebase:', err.message);
+                                }
+                            }
+                            
                             if (db && doc && setDoc) {
                                 try {
                                     const ref = doc(db, 'loterias', lot.nome, 'concursos', String(concurso));
@@ -294,6 +300,7 @@ async function validarTodosConcursos() {
                                         updatedAt: Date.now()
                                     };
                                     await setDoc(ref, payload, { merge: true });
+                                    // console.log(`💾 Dados salvos no Firebase para ${lot.nome}/${concurso}`);
                                 } catch (err) { 
                                     console.error('Erro ao salvar no Firestore:', err);
                                 }
@@ -308,25 +315,7 @@ async function validarTodosConcursos() {
                         console.log(`❌ Erro na API para ${lot.nome}/${concurso}:`, error.message);
                     }
 
-                    // 4) Fallback do config APENAS se Firebase não tiver dados
-                    const firebaseHasData = await checkFirebaseHasData(lot.nome, concurso);
-                    if (!firebaseHasData) {
-                        const bolaoId = Object.keys(lot.config?.boloes || {}).find(id => String(lot.config.boloes[id]?.concurso) === String(concurso));
-                        const cfg = bolaoId ? lot.config.boloes[bolaoId] : null;
-                        const numerosCfg = cfg ? extractResultadoArray(cfg) : null;
-                        if (Array.isArray(numerosCfg) && numerosCfg.length > 0) {
-                            await saveToLocalCache({ resultado: numerosCfg }, lot.nome, concurso, 'config-fallback');
-                            atualizarStatusBolao(lot.nome, concurso, true);
-                            totalValidados++; viaConfig++;
-                        } else {
-                            atualizarStatusBolao(lot.nome, concurso, false);
-                            totalSemDados++;
-                        }
-                    } else {
-                        console.log(`ℹ️ Firebase já tem dados para ${lot.nome}/${concurso} - ignorando config`);
-                        atualizarStatusBolao(lot.nome, concurso, true);
-                        totalValidados++;
-                    }
+                    // Sem fallback - apenas dados reais do Firebase/API
                 } catch (_) {
                     totalErros++;
                 }

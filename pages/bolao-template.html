@@ -19,7 +19,7 @@
         (function(){
             var link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = './assets/css/bolao.css?v=' + window.VERSION;
+            link.href = '../assets/css/bolao.css?v=' + window.VERSION;
             document.head.appendChild(link);
         })();
     </script>
@@ -106,12 +106,12 @@
             </div>
         </div>
     </div>
-    <div data-include="./partials/footer.html"></div>
+    <div data-include="../partials/footer.html"></div>
 
     <script type="module">
         const v = window.VERSION || Date.now();
-        import(`./assets/js/ui/includes.js?v=${v}`).then(m => m.loadIncludes && m.loadIncludes()).catch(() => {});
-        import(`./assets/js/ui/bolao.js?v=${v}`).then(m => m.bootstrapBolao && m.bootstrapBolao()).catch(() => {});
+        import(`../assets/js/ui/includes.js?v=${v}`).then(m => m.loadIncludes && m.loadIncludes()).catch(() => {});
+        import(`../assets/js/ui/bolao.js?v=${v}`).then(m => m.bootstrapBolao && m.bootstrapBolao()).catch(() => {});
     </script>
 </body>
 </html>

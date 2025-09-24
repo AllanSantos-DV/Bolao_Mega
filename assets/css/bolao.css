@@ -8,7 +8,7 @@ body {
     padding: 20px;
 }
 
-.container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+.container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
 .header { background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 30px; text-align: center; }
 .header h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
 .header .info { font-size: 1.2em; opacity: 0.9; }
@@ -99,6 +99,27 @@ body.resultado-fixo { padding-top: 120px; }
 .jogo-item { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e9ecef; min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: all 0.3s ease; }
 .jogo-item:hover { border-color: #667eea; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2); }
 .jogo-item.selected { border-color: #667eea; background: linear-gradient(135deg, #667eea, #764ba2); color: white; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); }
+
+.error-message { 
+    grid-column: 1 / -1; 
+    text-align: center; 
+    padding: 20px; 
+    background: #f8d7da; 
+    border: 1px solid #f5c6cb; 
+    border-radius: 8px; 
+    color: #721c24; 
+    margin: 10px 0;
+}
+
+.error-message h4 { 
+    margin: 0 0 10px 0; 
+    font-size: 1.2em; 
+}
+
+.error-message p { 
+    margin: 5px 0; 
+    font-size: 0.9em; 
+}
 .jogo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .jogo-numero { font-weight: bold; color: #333; }
 .acertos { font-size: 0.9em; font-weight: bold; }

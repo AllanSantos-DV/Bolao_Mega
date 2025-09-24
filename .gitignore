@@ -88,3 +88,7 @@ start-server.bat
 
 # dataconnect generated files
 .dataconnect
+
+# Agent folder and documentation
+.agente/
+docs/

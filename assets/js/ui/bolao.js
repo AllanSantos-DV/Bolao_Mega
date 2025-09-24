@@ -1,6 +1,6 @@
 import { initFirebase } from '../firebase/init.js';
 import { fetchCaixaResultado } from '../api/caixa.js';
-import { loadFromLocalCache, saveToLocalCache } from '../data/cache.js';
+import { loadFromLocalCache, saveToLocalCache, checkAndInvalidateCacheIfNeeded, validateConfigAgainstOfficial, checkFirebaseHasData } from '../data/cache.js';
 import { extractResultadoArray } from '../domain/loterias.js';
 
 function getQueryParams() {
@@ -162,16 +162,62 @@ function exibirPremiacaoOficial(premiacao, dadosCaixa) {
     const premiacaoSection = document.getElementById('premiacao-oficial-section');
     const premiacaoGrid = document.getElementById('premiacao-grid');
     const premiacaoInfo = document.getElementById('premiacao-info');
+    
+    if (!premiacaoSection || !premiacaoGrid || !premiacaoInfo) {
+        console.warn('Elementos da premiação não encontrados');
+        return;
+    }
+    
     premiacaoSection.style.display = 'block';
-    const premiacaoHTML = premiacao.map(item => `
-        <div class=\"premiacao-item\">
-            <div class=\"premiacao-acertos\">${item.descricaoFaixa || item.acertos}</div>
-            <div class=\"premiacao-valor\">R$ ${(item.valorPremio || item.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div class=\"premiacao-ganhadores\">${(item.numeroDeGanhadores || item.ganhadores).toLocaleString('pt-BR')} ganhadores</div>
-        </div>`).join('');
+    
+    if (!Array.isArray(premiacao) || premiacao.length === 0) {
+        premiacaoGrid.innerHTML = '<div class="premiacao-item"><div class="premiacao-acertos">Nenhuma premiação disponível</div></div>';
+        return;
+    }
+    
+    const premiacaoHTML = premiacao.map(item => {
+        // Tratar valores nulos/undefined
+        const ganhadores = item.numeroDeGanhadores ?? item.ganhadores ?? 0;
+        const valorPremio = item.valorPremio ?? item.valor ?? 0;
+        const descricaoFaixa = item.descricaoFaixa ?? item.acertos ?? 'N/A';
+        
+        // Texto para ganhadores
+        let ganhadoresText;
+        if (ganhadores === 0 || ganhadores === null || ganhadores === undefined) {
+            ganhadoresText = 'Acumulado';
+        } else {
+            ganhadoresText = `${Number(ganhadores).toLocaleString('pt-BR')} ganhadores`;
+        }
+        
+        // Formatar valor do prêmio
+        const valorFormatado = Number(valorPremio).toLocaleString('pt-BR', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        });
+        
+        return `
+        <div class="premiacao-item">
+            <div class="premiacao-acertos">${descricaoFaixa}</div>
+            <div class="premiacao-valor">R$ ${valorFormatado}</div>
+            <div class="premiacao-ganhadores">${ganhadoresText}</div>
+        </div>`;
+    }).join('');
+    
     premiacaoGrid.innerHTML = premiacaoHTML;
-    if (dadosCaixa.numero) {
-        premiacaoInfo.innerHTML = `<strong>Concurso:</strong> ${dadosCaixa.numero} | <strong>Data:</strong> ${dadosCaixa.dataApuracao || '-'} | <strong>Arrecadado:</strong> ${dadosCaixa.valorArrecadado ? 'R$ ' + dadosCaixa.valorArrecadado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}`;
+    
+    // Informações adicionais
+    if (dadosCaixa && dadosCaixa.numero) {
+        const numero = dadosCaixa.numero;
+        const data = dadosCaixa.dataApuracao || '-';
+        const arrecadado = dadosCaixa.valorArrecadado ? 
+            `R$ ${Number(dadosCaixa.valorArrecadado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
+            '-';
+            
+        premiacaoInfo.innerHTML = `
+            <strong>Concurso:</strong> ${numero} | 
+            <strong>Data:</strong> ${data} | 
+            <strong>Arrecadado:</strong> ${arrecadado}
+        `;
     }
 }
 
@@ -252,12 +298,71 @@ async function loadJogos(bolaoConfig) {
 }
 
 async function obterResultado(loteria, concurso) {
-    const cache = loadFromLocalCache(loteria, concurso, 24*60*60*1000);
-    if (cache) return cache;
+    // Verificar se precisa invalidar cache devido a mudanças no config
+    await checkAndInvalidateCacheIfNeeded(loteria, concurso);
+    
+    // SEMPRE tentar buscar resultado oficial primeiro (prioridade máxima)
     try {
-        const res = await fetchCaixaResultado(loteria, concurso);
-        if (res.ok) { await saveToLocalCache(res.data, loteria, concurso, 'api'); return res.data; }
-    } catch (_) {}
+        console.log(`🎯 Buscando resultado oficial para ${loteria}/${concurso}`);
+        const resOficial = await fetchCaixaResultado(loteria, concurso);
+        if (resOficial.ok && resOficial.data) {
+            const oficialResultado = extractResultadoArray(resOficial.data);
+            if (Array.isArray(oficialResultado) && oficialResultado.length > 0) {
+                console.log(`✅ Resultado oficial encontrado para ${loteria}/${concurso}`);
+                await saveToLocalCache(resOficial.data, loteria, concurso, 'caixa-api');
+                return resOficial.data;
+            }
+        } else {
+            console.log(`⚠️ API falhou para ${loteria}/${concurso} - status: ${resOficial?.status || 'erro'}`);
+        }
+    } catch (error) {
+        console.log(`❌ Erro na API para ${loteria}/${concurso}:`, error.message);
+    }
+    
+    // Se não conseguiu resultado oficial, usar cache
+    const cache = loadFromLocalCache(loteria, concurso, 24*60*60*1000);
+    if (cache) {
+        // Verificar se o cache é do Firebase ou da API (prioridade alta)
+        if (cache.origem === 'firebase' || cache.origem === 'caixa-api') {
+            console.log(`📦 Usando cache ${cache.origem} para ${loteria}/${concurso}`);
+            return cache;
+        }
+        
+        // Se cache é do config, verificar se Firebase tem dados melhores
+        if (cache.origem === 'config-fallback') {
+            const firebaseHasData = await checkFirebaseHasData(loteria, concurso);
+            if (firebaseHasData) {
+                console.log(`🔄 Cache do config encontrado, mas Firebase tem dados para ${loteria}/${concurso} - buscando Firebase`);
+                // Buscar dados do Firebase
+                try {
+                    const { initFirebase } = await import('../firebase/init.js');
+                    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    
+                    const { db } = await initFirebase();
+                    if (db) {
+                        const ref = doc(db, 'loterias', loteria, 'concursos', String(concurso));
+                        const snap = await getDoc(ref);
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            const numeros = extractResultadoArray(data);
+                            if (Array.isArray(numeros) && numeros.length > 0) {
+                                console.log(`✅ Dados do Firebase encontrados para ${loteria}/${concurso}`);
+                                await saveToLocalCache({ ...data, fonte: 'firebase' }, loteria, concurso, 'firebase');
+                                return { ...data, fonte: 'firebase' };
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log(`⚠️ Erro ao buscar Firebase para ${loteria}/${concurso}:`, error.message);
+                }
+            } else {
+                console.log(`📦 Usando cache do config para ${loteria}/${concurso}`);
+                return cache;
+            }
+        }
+    }
+    
+    console.log(`❌ Nenhum resultado disponível para ${loteria}/${concurso}`);
     return null;
 }
 
@@ -280,6 +385,24 @@ export async function bootstrapBolao() {
     const cacheObj = loadFromLocalCache(loteria, bolaoConfig.concurso, 24*60*60*1000);
     let numeros = null;
     let premiacaoAtual = null;
+    
+    // Se há resultado no config, validar contra o oficial APENAS se Firebase não tiver dados
+    if (bolaoConfig.resultado && Array.isArray(bolaoConfig.resultado) && bolaoConfig.resultado.length > 0) {
+        const firebaseHasData = await checkFirebaseHasData(loteria, bolaoConfig.concurso);
+        if (!firebaseHasData) {
+            console.log(`🔍 Validando resultado do config contra oficial para ${loteria}/${bolaoConfig.concurso}`);
+            const validacao = await validateConfigAgainstOfficial(loteria, bolaoConfig.concurso, bolaoConfig.resultado);
+            
+            if (validacao.valid === false) {
+                console.warn(`⚠️ ATENÇÃO: Resultado do config não confere com o oficial!`);
+                console.log(`Config: [${validacao.config.join(',')}]`);
+                console.log(`Oficial: [${validacao.oficial.join(',')}]`);
+            }
+        } else {
+            console.log(`ℹ️ Firebase tem dados para ${loteria}/${bolaoConfig.concurso} - pulando validação do config`);
+        }
+    }
+    
     if (cacheObj && Array.isArray(cacheObj.resultado) && cacheObj.resultado.length > 0) {
         numeros = cacheObj.resultado;
         displayResultado(numeros, cacheObj.fonte === 'firebase' || cacheObj.fonte === 'caixa-api' ? 'oficial' : 'config');
@@ -303,7 +426,18 @@ export async function bootstrapBolao() {
             }
         }
     }
-    if (!numeros && bolaoConfig.resultado && bolaoConfig.resultado.length > 0) { numeros = bolaoConfig.resultado; displayResultado(numeros, 'config'); }
+    
+    // Usar config APENAS se não conseguiu resultado de outras fontes E Firebase não tem dados
+    if (!numeros) {
+        const firebaseHasData = await checkFirebaseHasData(loteria, bolaoConfig.concurso);
+        if (!firebaseHasData && bolaoConfig.resultado && bolaoConfig.resultado.length > 0) {
+            console.log(`📄 Usando resultado do config para ${loteria}/${bolaoConfig.concurso} (Firebase não tem dados)`);
+            numeros = bolaoConfig.resultado;
+            displayResultado(numeros, 'config');
+        } else if (firebaseHasData) {
+            console.log(`ℹ️ Firebase tem dados para ${loteria}/${bolaoConfig.concurso} - ignorando config`);
+        }
+    }
     if (numeros && window.jogosAtuais) {
         window.numerosSorteados = numeros;
         const acertos = calcularAcertos(window.jogosAtuais, numeros);

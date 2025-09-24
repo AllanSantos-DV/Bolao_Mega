@@ -4,7 +4,7 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase
 export async function loadFirebaseConfig() {
     const version = (typeof window !== 'undefined' && window.VERSION) ? `?v=${window.VERSION}` : '';
     
-    // Usar apenas o arquivo público (compatível com GitHub Pages e servidor local)
+    // Carregar configuração do GitHub Pages
     try {
         const resp = await fetch(`./firebase-config.public.js${version}`);
         if (resp.ok) {
@@ -21,9 +21,12 @@ export async function loadFirebaseConfig() {
                 };
             }
         }
-    } catch (_) { /* continua */ }
+    } catch (error) {
+        console.warn('Erro ao carregar configuração Firebase:', error);
+    }
     
-    // Fallback padrão
+    // Fallback padrão (não deve ser usado em produção)
+    console.warn('⚠️ Usando configuração Firebase padrão - verifique os secrets do GitHub');
     return {
         apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         authDomain: 'mega-bolao-2025.firebaseapp.com',

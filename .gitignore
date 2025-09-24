@@ -1,3 +1,10 @@
+# Firebase Auth Config (credenciais locais)
+firebase-auth-config.js
+
+# Servidor local de desenvolvimento
+server-auth.js
+start-auth-server.bat
+
 # Logs
 logs
 *.log
@@ -89,3 +96,7 @@ _site/
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata
+
+# Node.js (se necessário no futuro)
+node_modules/
+package-lock.json

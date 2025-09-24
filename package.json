@@ -4,15 +4,23 @@
   "description": "Sistema de bolões otimizado para GitHub Pages",
   "main": "index.html",
   "scripts": {
-    "build": "echo 'Build não necessário - arquivos estáticos'",
-    "deploy": "echo 'Deploy automático via GitHub Actions'"
+    "info": "echo 'Sistema de bolões - GitHub Pages'"
   },
-  "keywords": ["bolao", "loteria", "firebase", "github-pages", "spa"],
+  "keywords": [
+    "bolao",
+    "loteria",
+    "firebase",
+    "github-pages",
+    "spa"
+  ],
   "author": "Allan",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/allansantos-dv/Bolao_Mega.git"
   },
-  "homepage": "https://allansantos-dv.github.io/Bolao_Mega/"
+  "homepage": "https://allansantos-dv.github.io/Bolao_Mega/",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }

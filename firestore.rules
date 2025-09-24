@@ -2,27 +2,29 @@ rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Dados de loterias: leitura pública, escrita com validação
+    // Dados de loterias: leitura e escrita apenas com autenticação
     match /loterias/{loteria}/concursos/{concurso} {
-      allow read: if true;
+      // Leitura apenas para usuários autenticados
+      allow read: if request.auth != null;
       
-      // Permite escrita se:
-      // 1. É criação de documento novo OU
-      // 2. É atualização com dados válidos do sistema
+      // Escrita apenas para usuários autenticados com dados válidos
       allow write: if 
-        // Permite criação (documento não existe)
-        !resource.exists ||
-        // OU permite atualização se vem de fontes confiáveis
-        (request.resource.data.fonte in ['caixa-api', 'firebase', 'config-fallback'] &&
-         request.resource.data.keys().hasAll(['resultado', 'numero']) &&
-         request.resource.data.resultado is list &&
-         request.resource.data.resultado.size() > 0);
+        request.auth != null &&  // Usuário deve estar autenticado
+        (
+          // Permite criação (documento não existe)
+          !resource.exists ||
+          // OU permite atualização se vem de fontes confiáveis
+          (request.resource.data.fonte in ['caixa-api', 'firebase', 'config-fallback'] &&
+           request.resource.data.keys().hasAll(['resultado', 'numero']) &&
+           request.resource.data.resultado is list &&
+           request.resource.data.resultado.size() > 0)
+        );
     }
 
-    // Cache: leitura pública, escrita com validação básica
+    // Cache: leitura e escrita apenas com autenticação
     match /cache/{loteria}/{concurso} {
-      allow read: if true;
-      allow write: if request.resource.data.keys().hasAll(['resultado', 'timestamp']);
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.resource.data.keys().hasAll(['resultado', 'timestamp']);
     }
 
     // Bloquear todo o restante

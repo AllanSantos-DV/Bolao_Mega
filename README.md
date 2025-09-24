@@ -13,7 +13,7 @@ Sistema completo de gerenciamento de bolões de loteria otimizado para **GitHub 
 - ✅ **Validação Automática** - Verificação automática de resultados
 - 🏆 **Premiação Oficial** - Dados oficiais da Caixa
 - 📱 **Interface Responsiva** - Funciona em qualquer dispositivo
-- 🚀 **Deploy Automático** - Atualizações via GitHub Actions
+- 🚀 **Deploy Automático** - Atualizações via branch do GitHub Pages
 
 ## 🏗️ Arquitetura
 
@@ -21,7 +21,7 @@ Sistema completo de gerenciamento de bolões de loteria otimizado para **GitHub 
 - **Tecnologia**: JavaScript Vanilla (ES6 modules)
 - **Arquitetura**: Single Page Application (SPA)
 - **Cache**: LocalStorage + Firebase Firestore
-- **Deploy**: GitHub Pages + GitHub Actions
+- **Deploy**: GitHub Pages (branch direta)
 
 ### **Backend (Firebase)**
 - **Banco**: Firebase Firestore
@@ -44,7 +44,6 @@ Sistema completo de gerenciamento de bolões de loteria otimizado para **GitHub 
 ├── loterias/          # Configurações por modalidade
 │   └── lotofacil/     # Configuração Lotofácil
 ├── partials/          # Componentes HTML reutilizáveis
-├── .github/workflows/  # GitHub Actions para deploy
 └── firebase.json      # Configuração Firebase
 ```
 
@@ -57,16 +56,16 @@ Sistema completo de gerenciamento de bolões de loteria otimizado para **GitHub 
 
 ## 🚀 Deploy Automático
 
-O sistema usa **GitHub Actions** para deploy automático:
+O sistema usa **deploy direto da branch** para GitHub Pages:
 
-- ✅ **Push para main** → Deploy automático
-- ✅ **Secrets do GitHub** → Configuração Firebase segura
+- ✅ **Push para branch configurada** → Deploy automático
+- ✅ **Variáveis do repositório** → Configuração Firebase segura
 - ✅ **Cache busting** → Atualizações instantâneas
 - ✅ **404 handling** → Roteamento SPA
 
 ## 🔧 Configuração Firebase
 
-### **Secrets do GitHub (Settings → Secrets):**
+### **Variáveis do Repositório (Settings → Repository variables):**
 - `FIREBASE_API_KEY`
 - `FIREBASE_AUTH_DOMAIN`
 - `FIREBASE_PROJECT_ID`

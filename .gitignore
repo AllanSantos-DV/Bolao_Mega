@@ -80,6 +80,7 @@ Thumbs.db
 # Firebase config files
 firebase-config-local.js
 firebase-config.js
+firebase-config.public.js
 firebase-debug.log*
 firebase-debug.*.log*
 

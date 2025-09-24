@@ -1,5 +1,5 @@
 import { fetchCaixaResultado } from '../api/caixa.js';
-import { loadFromLocalCache, saveToLocalCache } from '../data/cache.js';
+import { loadFromLocalCache, saveToLocalCache, checkAndInvalidateCacheIfNeeded, clearAllResultCaches, checkFirebaseHasData } from '../data/cache.js';
 import { extractResultadoArray } from '../domain/loterias.js';
 import { initFirebase } from '../firebase/init.js';
 let LOTERIAS = [];
@@ -175,9 +175,16 @@ async function obterConcursosDaLoteria(loteriaNome) {
 }
 
 function limparCacheCompleto() {
-    if (!confirm('⚠️ Tem certeza que deseja limpar TODO o cache?')) return;
-    Object.keys(localStorage).forEach(key => { if (key.includes('caixa_api_cache')) localStorage.removeItem(key); });
-    alert('✅ Cache limpo com sucesso!');
+    if (!confirm('⚠️ Tem certeza que deseja limpar TODO o cache de resultados?')) return;
+    
+    const quantidadeRemovida = clearAllResultCaches();
+    
+    if (quantidadeRemovida > 0) {
+        alert(`✅ Cache limpo com sucesso! ${quantidadeRemovida} item(s) removido(s).`);
+    } else {
+        alert('ℹ️ Nenhum cache encontrado para remover.');
+    }
+    
     renderCacheCard();
     location.reload();
 }
@@ -210,9 +217,33 @@ async function validarTodosConcursos() {
             const concursos = await obterConcursosDaLoteria(lot.nome);
             for (const concurso of concursos) {
                 try {
+                    // Verificar se precisa invalidar cache devido a mudanças no config
+                    await checkAndInvalidateCacheIfNeeded(lot.nome, concurso);
+                    
                     // 1) Cache
                     const cached = loadFromLocalCache(lot.nome, concurso, CACHE_DURATION);
-                    if (cached) { atualizarStatusBolao(lot.nome, concurso, true); totalValidados++; viaCache++; continue; }
+                    if (cached) { 
+                        // Verificar se o cache é do Firebase ou da API (prioridade alta)
+                        if (cached.origem === 'firebase' || cached.origem === 'caixa-api') {
+                            atualizarStatusBolao(lot.nome, concurso, true); 
+                            totalValidados++; 
+                            viaCache++; 
+                            continue; 
+                        }
+                        // Se cache é do config, verificar se Firebase tem dados melhores
+                        if (cached.origem === 'config-fallback') {
+                            const firebaseHasData = await checkFirebaseHasData(lot.nome, concurso);
+                            if (firebaseHasData) {
+                                console.log(`🔄 Cache do config encontrado, mas Firebase tem dados para ${lot.nome}/${concurso} - buscando Firebase`);
+                                // Não usar cache do config, buscar Firebase
+                            } else {
+                                atualizarStatusBolao(lot.nome, concurso, true); 
+                                totalValidados++; 
+                                viaCache++; 
+                                continue; 
+                            }
+                        }
+                    }
 
                     // 2) Firebase
                     let dadosFirebase = null;
@@ -270,20 +301,31 @@ async function validarTodosConcursos() {
                             atualizarStatusBolao(lot.nome, concurso, true);
                             totalValidados++; viaApi++;
                             continue;
+                        } else {
+                            console.log(`⚠️ API falhou para ${lot.nome}/${concurso} - status: ${res?.status || 'erro'}`);
                         }
-                    } catch (_) { /* segue para fallback */ }
+                    } catch (error) {
+                        console.log(`❌ Erro na API para ${lot.nome}/${concurso}:`, error.message);
+                    }
 
-                    // 4) Fallback do config
-                    const bolaoId = Object.keys(lot.config?.boloes || {}).find(id => String(lot.config.boloes[id]?.concurso) === String(concurso));
-                    const cfg = bolaoId ? lot.config.boloes[bolaoId] : null;
-                    const numerosCfg = cfg ? extractResultadoArray(cfg) : null;
-                    if (Array.isArray(numerosCfg) && numerosCfg.length > 0) {
-                        await saveToLocalCache({ resultado: numerosCfg }, lot.nome, concurso, 'config-fallback');
-                        atualizarStatusBolao(lot.nome, concurso, true);
-                        totalValidados++; viaConfig++;
+                    // 4) Fallback do config APENAS se Firebase não tiver dados
+                    const firebaseHasData = await checkFirebaseHasData(lot.nome, concurso);
+                    if (!firebaseHasData) {
+                        const bolaoId = Object.keys(lot.config?.boloes || {}).find(id => String(lot.config.boloes[id]?.concurso) === String(concurso));
+                        const cfg = bolaoId ? lot.config.boloes[bolaoId] : null;
+                        const numerosCfg = cfg ? extractResultadoArray(cfg) : null;
+                        if (Array.isArray(numerosCfg) && numerosCfg.length > 0) {
+                            await saveToLocalCache({ resultado: numerosCfg }, lot.nome, concurso, 'config-fallback');
+                            atualizarStatusBolao(lot.nome, concurso, true);
+                            totalValidados++; viaConfig++;
+                        } else {
+                            atualizarStatusBolao(lot.nome, concurso, false);
+                            totalSemDados++;
+                        }
                     } else {
-                        atualizarStatusBolao(lot.nome, concurso, false);
-                        totalSemDados++;
+                        console.log(`ℹ️ Firebase já tem dados para ${lot.nome}/${concurso} - ignorando config`);
+                        atualizarStatusBolao(lot.nome, concurso, true);
+                        totalValidados++;
                     }
                 } catch (_) {
                     totalErros++;

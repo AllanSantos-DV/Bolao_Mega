@@ -1,3 +1,10 @@
+# Firebase Auth Config (credenciais locais)
+firebase-auth-config.js
+
+# Servidor local de desenvolvimento
+server-auth.js
+start-auth-server.bat
+
 # Logs
 logs
 *.log
@@ -11,11 +18,7 @@ firebase-debug.*.log*
 .firebase/
 
 # Firebase config
-
-# Uncomment this if you'd like others to create their own Firebase project.
-# For a team working on the same Firebase project(s), it is recommended to leave
-# it commented so all members can deploy to the same project(s) in .firebaserc.
-# .firebaserc
+.firebaserc
 
 # Runtime data
 pids
@@ -81,14 +84,19 @@ firebase-config.public.js
 firebase-debug.log*
 firebase-debug.*.log*
 
-# Server local configuration
-server-auto.js
-server.js
-start-server.bat
-
 # dataconnect generated files
 .dataconnect
 
 # Agent folder and documentation
 .agente/
 docs/
+
+# GitHub Pages specific
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+
+# Node.js (se necessário no futuro)
+node_modules/
+package-lock.json

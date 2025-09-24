@@ -1,21 +1,26 @@
 {
-  "name": "bolao-mega-server",
+  "name": "bolao-mega-github-pages",
   "version": "1.0.0",
-  "description": "Servidor local para o sistema de bolões com variáveis de ambiente",
-  "main": "server.js",
+  "description": "Sistema de bolões otimizado para GitHub Pages",
+  "main": "index.html",
   "scripts": {
-    "start": "node server-auto.js",
-    "dev": "nodemon server-auto.js",
-    "install-deps": "npm install express dotenv nodemon"
+    "info": "echo 'Sistema de bolões - GitHub Pages'"
   },
-  "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.3.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  },
-  "keywords": ["bolao", "loteria", "firebase", "cache"],
+  "keywords": [
+    "bolao",
+    "loteria",
+    "firebase",
+    "github-pages",
+    "spa"
+  ],
   "author": "Allan",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/allansantos-dv/Bolao_Mega.git"
+  },
+  "homepage": "https://allansantos-dv.github.io/Bolao_Mega/",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }

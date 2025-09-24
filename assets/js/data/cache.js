@@ -43,26 +43,7 @@ export async function saveToLocalCache(data, loteria, concurso, origem = 'descon
         const config = loadConfigLoteriaFromWindowOrStorage(loteria);
         const validacao = validarDadosCache(data, config);
         if (!validacao.valido) {
-            // tentar fallback do config APENAS se Firebase não tiver dados
-            if (origem === 'config-fallback') {
-                const firebaseHasData = await checkFirebaseHasData(loteria, concurso);
-                if (firebaseHasData) {
-                    console.log(`⚠️ Firebase já tem dados para ${loteria}/${concurso} - ignorando config`);
-                    return false;
-                }
-            }
-            
-            if (config && config.boloes && config.boloes[`bolao-${concurso}`]) {
-                const bolaoCfg = config.boloes[`bolao-${concurso}`];
-                const fallback = extractResultadoArray(bolaoCfg);
-                if (fallback && fallback.length > 0) {
-                    localStorage.setItem(
-                        getLocalCacheKey(loteria, concurso),
-                        JSON.stringify({ resultado: fallback, timestamp: Date.now(), loteria, concurso, origem: 'config-fallback', validacao: { valido: true, motivo: 'Fallback do config' } })
-                    );
-                    return true;
-                }
-            }
+            // Sem fallback - apenas dados reais
             return false;
         }
         const resultado = extractResultadoArray(data);
@@ -141,6 +122,13 @@ export async function checkAndInvalidateCacheIfNeeded(loteria, concurso) {
 // Função para verificar se Firebase tem dados para um concurso
 export async function checkFirebaseHasData(loteria, concurso) {
     try {
+        // Primeiro verificar se há cache válido - se sim, não precisa do Firebase
+        const cached = loadFromLocalCache(loteria, concurso, 24*60*60*1000); // 24 horas
+        if (cached && cached.validacao && cached.validacao.valido) {
+            // console.log(`📦 Cache válido encontrado para ${loteria}/${concurso} - pulando verificação Firebase`);
+            return true;
+        }
+        
         // Importar dinamicamente para evitar dependência circular
         const { initFirebase } = await import('../firebase/init.js');
         const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');

@@ -4,33 +4,21 @@ import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/fir
 
 // Função para obter credenciais (lendo de variáveis de ambiente)
 async function getFirebaseCredentials() {
-    // Detectar se está rodando no GitHub Pages
-    const isGitHubPages = window.location.hostname.includes('github.io') || 
-                         window.location.hostname.includes('github.com');
+    // Sempre tentar ler credenciais das variáveis de ambiente primeiro (GitHub Pages)
+    const email = window.FIREBASE_AUTH_EMAIL || process.env.FIREBASE_AUTH_EMAIL;
+    const password = window.FIREBASE_AUTH_PASSWORD || process.env.FIREBASE_AUTH_PASSWORD;
     
-    if (isGitHubPages) {
-        // GitHub Pages: ler credenciais das variáveis de ambiente
-        console.log('🌐 GitHub Pages detectado - lendo credenciais das variáveis de ambiente');
-        
-        // Tentar ler credenciais das variáveis de ambiente do GitHub Pages
-        const email = window.FIREBASE_AUTH_EMAIL || process.env.FIREBASE_AUTH_EMAIL;
-        const password = window.FIREBASE_AUTH_PASSWORD || process.env.FIREBASE_AUTH_PASSWORD;
-        
-        if (email && password) {
-            console.log('✅ Credenciais carregadas das variáveis de ambiente');
-            return { email, password };
-        }
-        
-        console.error('❌ Credenciais Firebase não encontradas nas variáveis de ambiente');
-        throw new Error('FIREBASE_AUTH_EMAIL e FIREBASE_AUTH_PASSWORD devem estar configuradas');
+    if (email && password) {
+        console.log('✅ Credenciais carregadas das variáveis de ambiente');
+        return { email, password };
     }
     
-    // Desenvolvimento local: tentar servidor local
+    // Fallback: tentar servidor local apenas se não conseguir ler das variáveis de ambiente
     try {
         const response = await fetch('/api/firebase-auth');
         if (response.ok) {
             const credentials = await response.json();
-            // console.log('🔐 Credenciais carregadas do servidor local');
+            console.log('🔐 Credenciais carregadas do servidor local (fallback)');
             return credentials;
         }
     } catch (error) {

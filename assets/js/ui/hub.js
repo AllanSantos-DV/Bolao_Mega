@@ -310,6 +310,10 @@ async function validarTodosConcursos() {
                             continue;
                         } else {
                             console.log(`⚠️ API falhou para ${lot.nome}/${concurso} - status: ${res?.status || 'erro'}`);
+                            // Se a API retornou erro específico, não tentar novamente
+                            if (res?.status === 502 || res?.status === 500) {
+                                console.log(`🔄 Concurso ${concurso} pode não existir ainda ou API indisponível`);
+                            }
                         }
                     } catch (error) {
                         console.log(`❌ Erro na API para ${lot.nome}/${concurso}:`, error.message);

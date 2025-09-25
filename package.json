@@ -21,6 +21,7 @@
   },
   "homepage": "https://allansantos-dv.github.io/Bolao_Mega/",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2"
   }
 }

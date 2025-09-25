@@ -8,10 +8,11 @@ service cloud.firestore {
         request.auth != null &&
         (
           !resource.exists ||
-          (request.resource.data.fonte in ['caixa-api', 'firebase'] &&
-           request.resource.data.keys().hasAll(['resultado', 'numero']) &&
-           request.resource.data.resultado is list &&
-           request.resource.data.resultado.size() > 0)
+          (
+            request.resource.data.keys().hasAll(['resultado', 'numero']) &&
+            request.resource.data.resultado is list &&
+            request.resource.data.resultado.size() > 0
+          )
         );
     }
 

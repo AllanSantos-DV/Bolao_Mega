@@ -81,19 +81,36 @@ function calcularAcertos(jogos, numerosSorteados) {
 
 function displayAcertos(acertosPorFaixa) {
     const container = document.getElementById('acertos-grid');
+    const section = document.getElementById('acertos-section');
+    const title = section.querySelector('h3');
+    
     container.innerHTML = '';
-    Object.entries(acertosPorFaixa)
+    
+    // Filtrar apenas faixas com acertos válidos (11-15)
+    const acertosValidos = Object.entries(acertosPorFaixa)
         .filter(([, count]) => count > 0)
-        .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
-        .forEach(([faixa, count]) => {
-            const div = document.createElement('div');
-            div.className = 'acerto-item';
-            div.dataset.faixa = faixa;
-            div.innerHTML = `<div class=\"count\">${count}</div><div class=\"desc\">acertos (${faixa} números)</div>`;
-            div.addEventListener('click', () => filtrarJogosPorAcertos(parseInt(faixa)));
-            container.appendChild(div);
-        });
-    document.getElementById('acertos-section').style.display = 'block';
+        .sort((a, b) => parseInt(b[0]) - parseInt(a[0]));
+    
+    if (acertosValidos.length === 0) {
+        // Não há acertos válidos - mostrar mensagem diferente
+        title.textContent = '😔 Nenhum Cartão Premiado';
+        container.innerHTML = '<div class="no-acertos-message">Nenhum cartão atingiu 11 ou mais acertos</div>';
+        section.style.display = 'block';
+        return;
+    }
+    
+    // Há acertos válidos - mostrar contagem normal
+    title.textContent = '🏆 Contagem de Acertos';
+    acertosValidos.forEach(([faixa, count]) => {
+        const div = document.createElement('div');
+        div.className = 'acerto-item';
+        div.dataset.faixa = faixa;
+        div.innerHTML = `<div class=\"count\">${count}</div><div class=\"desc\">acertos (${faixa} números)</div>`;
+        div.addEventListener('click', () => filtrarJogosPorAcertos(parseInt(faixa)));
+        container.appendChild(div);
+    });
+    
+    section.style.display = 'block';
 }
 
 function filtrarJogosPorAcertos(faixaAcertos) {

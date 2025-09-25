@@ -91,10 +91,24 @@ O sistema usa **deploy direto da branch** para GitHub Pages:
 ### **Para contribuir:**
 1. Fork o repositório
 2. Clone localmente
-3. Faça suas alterações
-4. Teste localmente (servidor HTTP simples)
-5. Push para sua branch
-6. Abra Pull Request
+3. Configure o ambiente local (veja abaixo)
+4. Faça suas alterações
+5. Teste localmente (servidor HTTP simples)
+6. Push para sua branch
+7. Abra Pull Request
+
+### **Configuração Local:**
+```bash
+# 1. Copie o arquivo de exemplo
+cp firebase-config.public.js.example firebase-config.public.js
+
+# 2. Edite o arquivo com suas credenciais Firebase
+# Substitua os placeholders pelos valores reais:
+# - PLACEHOLDER_API_KEY → Sua API Key
+# - PLACEHOLDER_AUTH_DOMAIN → Seu Auth Domain
+# - PLACEHOLDER_PROJECT_ID → Seu Project ID
+# - etc...
+```
 
 ### **Teste Local:**
 ```bash
@@ -105,6 +119,8 @@ npx serve .
 # ou
 live-server
 ```
+
+**⚠️ IMPORTANTE:** O arquivo `firebase-config.public.js` não é versionado por segurança. Use o arquivo `.example` como base.
 
 ## 📄 Licença
 

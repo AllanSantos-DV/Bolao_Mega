@@ -1,0 +1,15 @@
+// Configuração pública para front-end (desenvolvimento local)
+// Este arquivo é usado apenas para desenvolvimento local
+// No GitHub Pages, este arquivo é substituído pelo GitHub Actions
+
+// Configurações Firebase (placeholders para desenvolvimento local)
+window.FIREBASE_API_KEY = "PLACEHOLDER_API_KEY";
+window.FIREBASE_AUTH_DOMAIN = "PLACEHOLDER_AUTH_DOMAIN";
+window.FIREBASE_PROJECT_ID = "PLACEHOLDER_PROJECT_ID";
+window.FIREBASE_STORAGE_BUCKET = "PLACEHOLDER_STORAGE_BUCKET";
+window.FIREBASE_MESSAGING_SENDER_ID = "PLACEHOLDER_MESSAGING_SENDER_ID";
+window.FIREBASE_APP_ID = "PLACEHOLDER_APP_ID";
+
+// Credenciais de autenticação Firebase (placeholders para desenvolvimento local)
+window.FIREBASE_AUTH_EMAIL = "PLACEHOLDER_AUTH_EMAIL";
+window.FIREBASE_AUTH_PASSWORD = "PLACEHOLDER_AUTH_PASSWORD";

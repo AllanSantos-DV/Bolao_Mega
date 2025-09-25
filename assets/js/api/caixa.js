@@ -2,10 +2,10 @@ import { fetchJsonWithTimeout, httpStatusHint } from './http.js';
 import { getStaticResult } from '../data/static-results.js';
 
 export async function fetchCaixaResultado(loteria, concurso) {
-    // GitHub Pages - tentar API direta (pode falhar por CORS)
+    // GitHub Pages - usar API direta da Caixa
     const url = `https://servicebus2.caixa.gov.br/portaldeloterias/api/${loteria}/${concurso}`;
     
-    console.log(`🌐 Tentando API: ${url}`);
+    console.log(`🌐 Tentando API Caixa: ${url}`);
     const result = await fetchJsonWithTimeout(url);
     
     if (result.ok && result.data) {

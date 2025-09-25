@@ -47,7 +47,7 @@ export async function loadFirebaseConfig() {
     
     // Carregar configuração do GitHub Pages
     try {
-        const resp = await fetch(`../firebase-config.public.js${version}`);
+        const resp = await fetch(`./firebase-config.public.js${version}`);
         if (resp.ok) {
             const script = await resp.text();
             eval(script);

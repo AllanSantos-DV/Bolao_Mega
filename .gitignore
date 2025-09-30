@@ -14,8 +14,7 @@ yarn-error.log*
 firebase-debug.log*
 firebase-debug.*.log*
 
-# Firebase cache
-.firebase/
+# Firebase cache (moved to development folders section)
 
 # Firebase config
 .firebaserc
@@ -53,7 +52,6 @@ node_modules/
 # System/editor junk
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
 
 # Optional npm cache directory
@@ -90,6 +88,11 @@ firebase-debug.*.log*
 # Agent folder and documentation
 .agente/
 docs/
+
+# Development folders
+.cursor/
+.vscode/
+.firebase/
 
 # GitHub Pages specific
 _site/

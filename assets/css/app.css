@@ -1,0 +1,27 @@
+/* NovoApp - CSS isolado */
+
+:root {
+    --bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    --card: rgba(255,255,255,0.08);
+    --card-hover: rgba(255,255,255,0.12);
+    --border: rgba(255,255,255,0.1);
+    --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: #fff; min-height: 100vh; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.header { text-align: center; margin-bottom: 32px; padding: 40px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; transition: .3s; }
+.card:hover { background: var(--card-hover); transform: translateY(-4px); }
+.btn { background: var(--primary-grad); color: #fff; border: 0; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+.btn + .btn { margin-left: 8px; }
+.cards-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 20px; }
+.loading { text-align: center; padding: 32px; color: #bdbdbd; }
+.error { background: rgba(255,107,107,.08); border: 1px solid rgba(255,107,107,.2); color: #ff6b6b; border-radius: 10px; padding: 16px; }
+.status-success{ color:#00d4aa; font-weight:600; }
+
+/* util */
+.hidden{ display:none !important; }
+
+

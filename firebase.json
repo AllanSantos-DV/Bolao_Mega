@@ -10,7 +10,54 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/*.bat",
+      "**/*.cmd",
+      "**/*.exe",
+      "**/*.sh",
+      "**/server.js",
+      "**/tailwind.config.js",
+      "**/postcss.config.js",
+      "**/*.example",
+      "**/deploy.log",
+      "**/.firebase/**",
+      "**/start-server.bat",
+      "**/app_antigo/**",
+      "**/.agente/**",
+      "**/.cursor/**",
+      "**/.vscode/**"
+    ],
+    "rewrites": [
+      { "source": "/login", "destination": "/pages/login.html" },
+      { "source": "/404", "destination": "/pages/404.html" },
+      { "source": "/app", "destination": "/index.html" },
+      { "source": "/app/**", "destination": "/index.html" },
+      { "source": "/", "destination": "/index.html" },
+      { "source": "**", "destination": "/index.html" }
+    ],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" },
+          { "key": "Pragma", "value": "no-cache" },
+          { "key": "Expires", "value": "0" }
+        ]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "max-age=300, must-revalidate" }
+        ]
+      },
+      {
+        "source": "**/*.css",
+        "headers": [
+          { "key": "Cache-Control", "value": "max-age=300, must-revalidate" }
+        ]
+      }
     ]
   }
 }
+
+

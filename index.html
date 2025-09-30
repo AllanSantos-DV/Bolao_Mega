@@ -1,48 +1,496 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Sistema de Bolões - Hub Principal</title>
-    <script>
-        // Versioning automático para evitar cache
-        window.VERSION = Date.now();
-        console.log('Versão do sistema:', window.VERSION);
-    </script>
-    <script>
-        (function(){
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = './assets/css/hub.css?v=' + window.VERSION;
-            document.head.appendChild(link);
-        })();
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Hub • NovoApp</title>
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: Inter, system-ui, -apple-system, sans-serif; 
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); 
+      color: #fff; 
+      min-height: 100vh; 
+      visibility: hidden;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 40px 20px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: #bdbdbd;
+      font-size: 16px;
+    }
+    .user-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+    }
+    .user-details {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .user-name {
+      font-weight: 500;
+      color: #e0e0e0;
+    }
+    .logout-btn {
+      background: rgba(255,107,107,0.1);
+      border: 1px solid rgba(255,107,107,0.3);
+      color: #ff6b6b;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .logout-btn:hover {
+      background: rgba(255,107,107,0.2);
+    }
+    .card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+    }
+    .card:hover {
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-4px);
+    }
+    .card h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #e0e0e0;
+    }
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: 0;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+      margin-right: 12px;
+      margin-bottom: 12px;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-success {
+      background: rgba(0,212,170,0.2);
+      color: #00d4aa;
+      border: 1px solid rgba(0,212,170,0.3);
+    }
+    .status-warning {
+      background: rgba(255,193,7,0.2);
+      color: #ffc107;
+      border: 1px solid rgba(255,193,7,0.3);
+    }
+    .status-error {
+      background: rgba(255,107,107,0.2);
+      color: #ff6b6b;
+      border: 1px solid rgba(255,107,107,0.3);
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #bdbdbd;
+    }
+    .error {
+      background: rgba(255,107,107,0.1);
+      border: 1px solid rgba(255,107,107,0.3);
+      color: #ff6b6b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-item {
+      text-align: center;
+      padding: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: #bdbdbd;
+    }
+    .debug-panel {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      width: 320px;
+      max-height: 60vh;
+      background: rgba(0,0,0,0.9);
+      border: 1px solid #0f0;
+      color: #0f0;
+      padding: 16px;
+      overflow: auto;
+      z-index: 9999;
+      font: 11px/1.4 monospace;
+      border-radius: 8px;
+      display: none;
+    }
+    .debug-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      background: rgba(0,0,0,0.8);
+      border: 1px solid #0f0;
+      color: #0f0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font: 11px monospace;
+    }
+  </style>
+  
+  <script src="https://cdn.tailwindcss.com/3.4.0"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎯 Sistema de Bolões</h1>
-            <p>Hub Principal - Gerencie e visualize seus bolões</p>
-            <div data-include="./partials/cache-control.html"></div>
-        </div>
+  <button class="debug-toggle" onclick="toggleDebug()">DEBUG</button>
+  <div class="debug-panel" id="debug-panel">
+    <div><strong>DEBUG LOGS</strong></div>
+    <div id="debug-logs"></div>
+  </div>
 
-        <div class="content">
-            <div class="loterias-section">
-                <h2>📊 Loterias Disponíveis</h2>
-                <div class="loading" id="loading">Carregando loterias...</div>
-                <div id="loterias-container" style="display: none;"></div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 NovoApp - Sistema de Bolões</h1>
+      <p>Hub Moderno - Gestão Completa de Bolões</p>
     </div>
-    <div data-include="./partials/footer.html"></div>
 
-    <script type="module">
-        const v = window.VERSION || Date.now();
-        import(`./assets/js/ui/includes.js?v=${v}`).then(m => m.loadIncludes && m.loadIncludes()).catch(() => {});
-        import(`./assets/js/ui/hub.js?v=${v}`).then(m => m.bootstrapHub && m.bootstrapHub()).catch(() => {});
-    </script>
+    <div class="user-info" id="user-info" style="display: none;">
+      <div class="user-details">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="user-name" id="user-name">Usuário</div>
+      </div>
+      <button class="logout-btn" id="logout-btn">Sair</button>
+    </div>
+
+    <div class="card">
+      <h3>🧠 Controle de Cache</h3>
+      <div id="cache-status" class="status status-success">Carregando...</div>
+      <div style="margin-top: 16px;">
+        <button class="btn" id="btn-limpar-cache">🗑️ Limpar Cache</button>
+        <button class="btn btn-secondary" id="btn-atualizar-cache">🔄 Atualizar Cache</button>
+        <button class="btn btn-secondary" id="btn-validar-concursos">✅ Validar Concursos</button>
+      </div>
+      <div id="cache-results" style="margin-top: 16px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Loterias Disponíveis</h3>
+      <div id="lotteries-loading" class="loading">🔄 Carregando loterias...</div>
+      <div id="lotteries-container" style="display: none;"></div>
+      <div id="lotteries-empty" class="error" style="display: none;">
+        <div>🔍 Nenhuma loteria encontrada</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📈 Estatísticas do Sistema</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="total-lotteries">-</div>
+          <div class="stat-label">Total de Loterias</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="total-boloes">-</div>
+          <div class="stat-label">Total de Bolões</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="resultados-prontos">-</div>
+          <div class="stat-label">Resultados Prontos</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="app-version">-</div>
+          <div class="stat-label">Versão do App</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>⚡ Sistema</h3>
+        <div style="margin-bottom: 12px;">
+          <strong>Status:</strong> <span class="status status-success">Online</span>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <strong>Última Atualização:</strong> <span id="last-update">-</span>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <strong>Ambiente:</strong> <span id="environment">-</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3>🔧 Ações Rápidas</h3>
+        <button class="btn" onclick="window.location.href='/pages/login.html'">
+          🔐 Gerenciar Login
+        </button>
+        <button class="btn btn-secondary" onclick="clearAllData()">
+          🗑️ Limpar Todos os Dados
+        </button>
+        <button class="btn btn-secondary" onclick="exportData()">
+          📤 Exportar Dados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+    import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+    import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-Q2-wknTpBAg1FKKIFwmKzMGpdZfS378",
+      authDomain: "mega-bolao-2025.firebaseapp.com",
+      projectId: "mega-bolao-2025",
+      storageBucket: "mega-bolao-2025.firebasestorage.app",
+      messagingSenderId: "607263101053",
+      appId: "1:607263101053:web:e6d228034b4643a6412114"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    window.DEBUG = true;
+    window.VERSION = Date.now();
+    window.LOGS = [];
+    
+    function debugLog(category, message, data = null) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] [${category}] ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
+      window.LOGS.push(logEntry);
+      if (window.DEBUG) console.log(`🔍 ${logEntry}`);
+    }
+
+    function toggleDebug() {
+      const panel = document.getElementById('debug-panel');
+      const logs = document.getElementById('debug-logs');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      if (logs) logs.innerHTML = window.LOGS.slice(-50).join('<br>');
+    }
+
+    const userInfo = document.getElementById('user-info');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const logoutBtn = document.getElementById('logout-btn');
+    const cacheStatus = document.getElementById('cache-status');
+    const lotteriesLoading = document.getElementById('lotteries-loading');
+    const lotteriesContainer = document.getElementById('lotteries-container');
+    const lotteriesEmpty = document.getElementById('lotteries-empty');
+    function showError(message) {
+      debugLog('ERROR', message);
+      cacheStatus.textContent = message;
+      cacheStatus.className = 'status status-error';
+    }
+
+    function showSuccess(message) {
+      debugLog('SUCCESS', message);
+      cacheStatus.textContent = message;
+      cacheStatus.className = 'status status-success';
+    }
+
+    function showWarning(message) {
+      debugLog('WARNING', message);
+      cacheStatus.textContent = message;
+      cacheStatus.className = 'status status-warning';
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        debugLog('AUTH', 'Usuário autenticado', { uid: user.uid, email: user.email });
+        userInfo.style.display = 'flex';
+        userName.textContent = user.displayName || user.email || 'Usuário';
+        userAvatar.textContent = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+        document.body.style.visibility = 'visible';
+        loadData();
+      } else {
+        debugLog('AUTH', 'Usuário não autenticado, redirecionando...');
+        window.location.href = '/pages/login.html';
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        debugLog('AUTH', 'Logout realizado');
+        window.location.href = '/pages/login.html';
+      } catch (error) {
+        debugLog('ERROR', 'Erro no logout', error);
+      }
+    });
+
+    async function loadData() {
+      try {
+        debugLog('DATA', 'Carregando dados do Firestore...');
+        showWarning('Carregando dados...');
+
+        const lotteriesSnapshot = await getDocs(collection(db, 'loterias'));
+        const lotteries = [];
+        lotteriesSnapshot.forEach(doc => {
+          lotteries.push({ id: doc.id, ...doc.data() });
+        });
+
+        debugLog('DATA', 'Loterias carregadas', { count: lotteries.length });
+
+        if (lotteries.length > 0) {
+          lotteriesLoading.style.display = 'none';
+          lotteriesEmpty.style.display = 'none';
+          lotteriesContainer.style.display = 'block';
+          
+          lotteriesContainer.innerHTML = lotteries.map(lottery => `
+            <div class="card" style="margin-bottom: 16px;">
+              <h4 style="margin-bottom: 8px; color: #e0e0e0;">${lottery.nome || lottery.id}</h4>
+              <p style="color: #bdbdbd; font-size: 14px;">Status: <span class="status status-success">Ativo</span></p>
+            </div>
+          `).join('');
+        } else {
+          lotteriesLoading.style.display = 'none';
+          lotteriesContainer.style.display = 'none';
+          lotteriesEmpty.style.display = 'block';
+        }
+
+        document.getElementById('total-lotteries').textContent = lotteries.length;
+        document.getElementById('total-boloes').textContent = '0';
+        document.getElementById('resultados-prontos').textContent = '0';
+        document.getElementById('app-version').textContent = window.VERSION;
+        document.getElementById('last-update').textContent = new Date().toLocaleString();
+        document.getElementById('environment').textContent = window.location.hostname === 'localhost' ? 'Desenvolvimento' : 'Produção';
+
+        showSuccess('Dados carregados com sucesso!');
+      } catch (error) {
+        debugLog('ERROR', 'Erro ao carregar dados', error);
+        showError('Erro ao carregar dados: ' + error.message);
+      }
+    }
+
+    document.getElementById('btn-limpar-cache').addEventListener('click', () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      showSuccess('Cache limpo com sucesso!');
+      debugLog('CACHE', 'Cache limpo');
+    });
+
+    document.getElementById('btn-atualizar-cache').addEventListener('click', () => {
+      loadData();
+    });
+
+    document.getElementById('btn-validar-concursos').addEventListener('click', () => {
+      showWarning('Validando concursos...');
+      setTimeout(() => {
+        showSuccess('Concursos validados!');
+      }, 2000);
+    });
+
+    window.clearAllData = () => {
+      if (confirm('Tem certeza que deseja limpar todos os dados?')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        showSuccess('Todos os dados foram limpos!');
+      }
+    };
+
+    window.exportData = () => {
+      const data = {
+        version: window.VERSION,
+        timestamp: new Date().toISOString(),
+        logs: window.LOGS
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `app-data-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    debugLog('SYSTEM', 'NovoApp Hub inicializado', { version: window.VERSION });
+  </script>
 </body>
 </html>

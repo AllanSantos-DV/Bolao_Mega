@@ -3,7 +3,15 @@ window.NOVOAPP_LOGS = [];
 
 export function log(cat, msg, data=null){
     const t = new Date().toLocaleTimeString();
-    const line = `[${t}] [${cat}] ${msg}${data?': '+JSON.stringify(data):''}`;
+    let sanitizedData = data;
+    
+    if (data && typeof data === 'object') {
+        sanitizedData = { ...data };
+        if (sanitizedData.uid) sanitizedData.uid = sanitizedData.uid.substring(0, 8) + '...';
+        if (sanitizedData.email) sanitizedData.email = sanitizedData.email.replace(/(.{3}).*(@.*)/, '$1***$2');
+    }
+    
+    const line = `[${t}] [${cat}] ${msg}${sanitizedData?': '+JSON.stringify(sanitizedData):''}`;
     window.NOVOAPP_LOGS.push(line);
     if(window.NOVOAPP_DEBUG) console.log('🔍', line);
 }

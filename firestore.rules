@@ -2,31 +2,85 @@ rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Função para verificar se usuário é admin
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.email in ['allannascimentodossantos@gmail.com'];
+    }
+
+    // Função para verificar se usuário está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Coleções públicas (leitura para todos, escrita apenas para admin)
     match /public/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Loterias (leitura pública, escrita apenas admin)
+    match /loterias/{loteria} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Loterias (coleção completa)
+    match /loterias {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /loterias/{loteria}/concursos/{concurso} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
+    // Cache (leitura pública, escrita apenas admin)
     match /cache/{loteria}/{concurso} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
+    // Configurações (leitura pública, escrita apenas admin)
     match /config/{document} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
+    // Bolões (leitura pública, escrita apenas admin)
     match /boloes/{bolao} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // Bolões (coleção completa)
+    match /boloes {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
+    // Participantes (somente admins podem ler/escrever — PII protegida)
+    match /participantes/{participante} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Participantes (coleção completa)
+    match /participantes {
+      allow read, write: if isAdmin();
+    }
+
+    // Usuários admin (apenas admin pode ler/escrever)
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Uploads de arquivos (apenas admin)
+    match /uploads/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Regra padrão - negar tudo
     match /{document=**} {
       allow read, write: if false;
     }

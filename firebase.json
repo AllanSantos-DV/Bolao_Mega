@@ -18,6 +18,7 @@
       "**/server.js",
       "**/tailwind.config.js",
       "**/postcss.config.js",
+      "**/assets/css/tailwind.css",
       "**/*.example",
       "**/deploy.log",
       "**/.firebase/**",

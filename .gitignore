@@ -89,6 +89,9 @@ firebase-debug.*.log*
 .agente/
 docs/
 
+# Old app version
+app_antigo/
+
 # Development folders
 .cursor/
 .vscode/

@@ -1,0 +1,35 @@
+{
+  "name": "bolao_mega",
+  "version": "1.0.0",
+  "description": "",
+  "main": "firebase-config.public.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "build-css": "tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.min.css --minify",
+    "watch-css": "tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.min.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AllanSantos-DV/Bolao_Mega.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AllanSantos-DV/Bolao_Mega/issues"
+  },
+  "homepage": "https://github.com/AllanSantos-DV/Bolao_Mega#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.13",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13"
+  }
+}

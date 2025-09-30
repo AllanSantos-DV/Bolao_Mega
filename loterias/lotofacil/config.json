@@ -122,6 +122,17 @@
       "comprovantes": {
         "pasta": "comprovantes/lotofacil/bolao-10"
       }
+    },
+    "Bolao-10-2": {
+      "concurso": "3500",
+      "resultado": [],
+      "planilha": "bolao - 10 - 2.xlsx",
+      "cotas": 5,
+      "nome": "Bolao 10 Jogos",
+      "data_sorteio": "30/09/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-10-2"
+      }
     }
   }
 }

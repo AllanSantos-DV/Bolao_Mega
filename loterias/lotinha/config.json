@@ -1,0 +1,59 @@
+{
+    "loteria": {
+        "modalidade": "Lotinha",
+        "numeros_por_jogo": {
+            "minimo": 16,
+            "maximo": 23,
+            "multiplos_tamanhos": true
+        },
+        "universo": {
+            "minimo": 1,
+            "maximo": 25
+        },
+        "range_acertos": {
+            "minimo": 15,
+            "maximo": 15,
+            "premiacao_apenas_maximo": true
+        },
+        "resultado_padrao": {
+            "modalidade": "Lotofacil",
+            "numeros_sorteados": 15
+        },
+        "planilha": {
+            "detecao_inteligente": true,
+            "cenarios_suportados": [
+                "1A: Uma aba COM header na linha 1 - JOGOS COM MESMO TAMANHO",
+                "1B: Uma aba COM header na coluna A - JOGOS COM TAMANHOS DISTINTOS", 
+                "1C: Uma aba SEM header - JOGOS COM MESMO TAMANHO",
+                "2A: Múltiplas abas COM header na linha 1 - JOGOS COM MESMO TAMANHO",
+                "2B: Múltiplas abas SEM header na linha 1 - JOGOS COM MESMO TAMANHO"
+            ],
+            "descricao": "Detecção automática: Header linha 1 = mesmo tamanho, Header coluna A = tamanhos distintos. Sem header = jogos começam na linha 1"
+        },
+        "acertos": {}
+    },
+    "boloes": {
+        "bolao-lotinha-1": {
+            "concurso": "3509",
+            "resultado": [],
+            "planilha": "lotinha 9 jogos.xlsx",
+            "cotas": 3,
+            "nome": "Bolao Lotinha 9",
+            "data_sorteio": "10/10/2025",
+            "comprovantes": {
+                "pasta": "comprovantes/lotinha/bolao-lotinha-1"
+            }
+        },
+        "bolao-lotinha-2": {
+            "concurso": "3509",
+            "resultado": [],
+            "planilha": "jogos_base_21_17_21---10-10.xlsx",
+            "cotas": 3,
+            "nome": "Bolao Lotinha 21",
+            "data_sorteio": "10/10/2025",
+            "comprovantes": {
+                "pasta": "comprovantes/lotinha/bolao-lotinha-2"
+            }
+        }
+    }
+}

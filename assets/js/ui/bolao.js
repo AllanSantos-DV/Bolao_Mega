@@ -75,16 +75,33 @@ function calcularAcertos(jogos, numerosSorteados, config) {
     const rangeAcertos = config.loteria.range_acertos;
     const minimoAcertos = rangeAcertos?.minimo || 11;
     const maximoAcertos = rangeAcertos?.maximo || 15;
+    const premiacaoApenasMaximo = rangeAcertos?.premiacao_apenas_maximo === true;
     
     const acertosPorFaixa = {};
-    for (let i = minimoAcertos; i <= maximoAcertos; i++) {
-        acertosPorFaixa[i] = 0;
+    
+    // Para Lotinha: só contar acertos máximos (15)
+    if (premiacaoApenasMaximo) {
+        acertosPorFaixa[maximoAcertos] = 0;
+    } else {
+        // Para outras loterias: contar todas as faixas
+        for (let i = minimoAcertos; i <= maximoAcertos; i++) {
+            acertosPorFaixa[i] = 0;
+        }
     }
     
     jogos.forEach(jogo => {
         const acertos = jogo.filter(n => numerosSorteados.includes(n)).length;
-        if (acertos >= minimoAcertos && acertos <= maximoAcertos) {
-            acertosPorFaixa[acertos] = (acertosPorFaixa[acertos] || 0) + 1;
+        
+        if (premiacaoApenasMaximo) {
+            // Lotinha: só premia com 15 acertos
+            if (acertos === maximoAcertos) {
+                acertosPorFaixa[maximoAcertos] = (acertosPorFaixa[maximoAcertos] || 0) + 1;
+            }
+        } else {
+            // Outras loterias: premia conforme faixa
+            if (acertos >= minimoAcertos && acertos <= maximoAcertos) {
+                acertosPorFaixa[acertos] = (acertosPorFaixa[acertos] || 0) + 1;
+            }
         }
     });
     displayAcertos(acertosPorFaixa, config);
@@ -101,6 +118,7 @@ function displayAcertos(acertosPorFaixa, config) {
     // Obter configurações da loteria para mensagem dinâmica
     const rangeAcertos = config.loteria.range_acertos;
     const minimoAcertos = rangeAcertos?.minimo || 11;
+    const premiacaoApenasMaximo = rangeAcertos?.premiacao_apenas_maximo === true;
     
     // Filtrar apenas faixas com acertos válidos
     const acertosValidos = Object.entries(acertosPorFaixa)
@@ -109,8 +127,13 @@ function displayAcertos(acertosPorFaixa, config) {
     
     if (acertosValidos.length === 0) {
         // Não há acertos válidos - mostrar mensagem diferente
-        title.textContent = '😔 Nenhum Cartão Premiado';
-        container.innerHTML = `<div class="no-acertos-message">Nenhum cartão atingiu ${minimoAcertos} ou mais acertos</div>`;
+        if (premiacaoApenasMaximo) {
+            title.textContent = '😔 Nenhum Cartão Premiado';
+            container.innerHTML = `<div class="no-acertos-message">Nenhum cartão acertou os ${minimoAcertos} números sorteados</div>`;
+        } else {
+            title.textContent = '😔 Nenhum Cartão Premiado';
+            container.innerHTML = `<div class="no-acertos-message">Nenhum cartão atingiu ${minimoAcertos} ou mais acertos</div>`;
+        }
         section.style.display = 'block';
         return;
     }
@@ -154,6 +177,7 @@ function destacarAcertosNosJogos(jogos, numerosSorteados, config) {
     // Obter configurações da loteria para cor dinâmica
     const rangeAcertos = config.loteria.range_acertos;
     const minimoAcertos = rangeAcertos?.minimo || 11;
+    const premiacaoApenasMaximo = rangeAcertos?.premiacao_apenas_maximo === true;
     
     jogosItems.forEach((item, index) => {
         const jogo = jogos[index];
@@ -165,7 +189,15 @@ function destacarAcertosNosJogos(jogos, numerosSorteados, config) {
             if (numerosSorteados.includes(jogo[i])) numDiv.classList.add('numero-acertado');
         });
         acertosDiv.textContent = `${acertos} acertos`;
-        acertosDiv.style.color = acertos >= minimoAcertos ? '#28a745' : '#dc3545';
+        
+        // Para Lotinha: só destaca se acertou todos os 15 números
+        if (premiacaoApenasMaximo) {
+            acertosDiv.style.color = acertos === minimoAcertos ? '#28a745' : '#dc3545';
+        } else {
+            // Para outras loterias: destaca conforme faixa mínima
+            acertosDiv.style.color = acertos >= minimoAcertos ? '#28a745' : '#dc3545';
+        }
+        
         item.onclick = () => selecionarJogo(index, jogo, numerosSorteados);
     });
 }
@@ -290,14 +322,21 @@ function renderGanhos(acertosPorFaixa, premiacaoMap, totalCotas, config) {
         const rangeAcertos = config.loteria.range_acertos;
         const minimoAcertos = rangeAcertos?.minimo || 11;
         const maximoAcertos = rangeAcertos?.maximo || 15;
+        const premiacaoApenasMaximo = rangeAcertos?.premiacao_apenas_maximo === true;
         
         let total = 0;
         const rows = [];
         
         // Criar array de faixas em ordem decrescente
         const faixas = [];
-        for (let i = maximoAcertos; i >= minimoAcertos; i--) {
-            faixas.push(i);
+        if (premiacaoApenasMaximo) {
+            // Lotinha: só mostrar faixa máxima (15 acertos)
+            faixas.push(maximoAcertos);
+        } else {
+            // Outras loterias: mostrar todas as faixas
+            for (let i = maximoAcertos; i >= minimoAcertos; i--) {
+                faixas.push(i);
+            }
         }
         
         faixas.forEach(faixa => {
@@ -324,29 +363,213 @@ async function loadJogos(bolaoConfig, config) {
         if (!response.ok) throw new Error(`Planilha não encontrada: ${response.status}`);
         const arrayBuffer = await response.arrayBuffer();
         const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         
         // Obter configurações da loteria
-        const numerosPorJogo = config.loteria.numeros_por_jogo || 15;
+        const numerosPorJogoConfig = config.loteria.numeros_por_jogo;
         const universo = config.loteria.universo;
         const minNumero = universo?.minimo || 1;
         const maxNumero = universo?.maximo || 25;
         
-        const jogos = [];
-        for (let i = 1; i < jsonData.length; i++) {
-            const row = jsonData[i];
-            if (row && row.length >= numerosPorJogo) {
-                const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
-                if (numeros.length === numerosPorJogo) {
-                    jogos.push(numeros);
-                    // console.log(`✅ Jogo ${jogos.length} adicionado:`, numeros);
+        // Verificar se suporta múltiplos tamanhos (Lotinha)
+        const suportaMultiplosTamanhos = numerosPorJogoConfig?.multiplos_tamanhos === true;
+        const tamanhoMinimo = suportaMultiplosTamanhos ? numerosPorJogoConfig?.minimo || 16 : (numerosPorJogoConfig || 15);
+        const tamanhoMaximo = suportaMultiplosTamanhos ? numerosPorJogoConfig?.maximo || 23 : (numerosPorJogoConfig || 15);
+        
+        let jogos = [];
+        
+        if (suportaMultiplosTamanhos) {
+            // Detecção inteligente: verificar se é planilha com uma ou múltiplas abas
+            const totalAbas = workbook.SheetNames.length;
+            console.log(`📊 Planilha com ${totalAbas} aba(s):`, workbook.SheetNames);
+            
+            if (totalAbas === 1) {
+                // CENÁRIO 1: PLANILHA COM UMA ÚNICA ABA
+                console.log(`📋 CENÁRIO 1: Planilha com UMA ÚNICA ABA`);
+                
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                console.log(`📋 Total de linhas encontradas: ${jsonData.length}`);
+                
+                // Verificar se há header na linha 1 (primeira linha) - indica jogos com MESMO tamanho
+                const primeiraLinha = jsonData[0];
+                const temHeaderNaLinha1 = primeiraLinha && primeiraLinha.length > 0 && 
+                    typeof primeiraLinha[0] === 'string' && (
+                        primeiraLinha[0].toLowerCase().includes('jogo') ||
+                        primeiraLinha[0].toLowerCase().includes('bola') ||
+                        primeiraLinha[0].toLowerCase().includes('game')
+                    );
+                
+                if (temHeaderNaLinha1) {
+                    // CENÁRIO 1A: Uma aba COM header na linha 1 - JOGOS COM MESMO TAMANHO
+                    console.log(`📋 CENÁRIO 1A: Uma aba COM header na linha 1 - JOGOS COM MESMO TAMANHO`);
+                    
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row && row.length >= tamanhoMinimo) {
+                            const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
+                            
+                            if (numeros.length >= tamanhoMinimo && numeros.length <= tamanhoMaximo) {
+                                jogos.push(numeros);
+                                console.log(`✅ Jogo ${jogos.length} adicionado (${numeros.length} números) - Linha ${i + 1}:`, numeros);
+                            }
+                        }
+                    }
+                } else {
+                    // CENÁRIO 1B: Uma aba SEM header na linha 1 - Verificar se há header na coluna A
+                    console.log(`📋 CENÁRIO 1B: Uma aba SEM header na linha 1 - Verificando header na coluna A`);
+                    
+                    // Tentar primeiro com detecção de header na primeira coluna - indica jogos com TAMANHOS DISTINTOS
+                    let jogosComHeader = 0;
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row && row.length >= tamanhoMinimo) {
+                            const primeiraColuna = row[0];
+                            const isGameRow = primeiraColuna && typeof primeiraColuna === 'string' && (
+                                primeiraColuna.toLowerCase().includes('jogo') ||
+                                primeiraColuna.toLowerCase().includes('bola') ||
+                                primeiraColuna.toLowerCase().includes('game')
+                            );
+                            
+                            if (isGameRow) {
+                                const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
+                                
+                                if (numeros.length >= tamanhoMinimo && numeros.length <= tamanhoMaximo) {
+                                    jogos.push(numeros);
+                                    jogosComHeader++;
+                                    console.log(`✅ Jogo ${jogos.length} adicionado (${numeros.length} números) - Linha ${i + 1} com header na coluna A:`, numeros);
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (jogosComHeader > 0) {
+                        console.log(`✅ Encontrados ${jogosComHeader} jogos com header na coluna A - JOGOS COM TAMANHOS DISTINTOS`);
+                    } else {
+                        // Se não encontrou jogos com header, processar todas as linhas (sem header) - jogos com mesmo tamanho
+                        console.log(`⚠️ Nenhum jogo encontrado com header. Processando todas as linhas (sem header) - JOGOS COM MESMO TAMANHO...`);
+                        jogos = []; // Limpar array para reprocessar
+                        
+                        for (let i = 0; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (row && row.length >= tamanhoMinimo) {
+                                const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
+                                
+                                if (numeros.length >= tamanhoMinimo && numeros.length <= tamanhoMaximo) {
+                                    jogos.push(numeros);
+                                    console.log(`✅ Jogo ${jogos.length} adicionado (${numeros.length} números) - Linha ${i + 1} sem header:`, numeros);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+            } else {
+                // CENÁRIO 2: PLANILHA COM MÚLTIPLAS ABAS
+                console.log(`📋 CENÁRIO 2: Planilha com MÚLTIPLAS ABAS`);
+                
+                let abasProcessadas = 0;
+                let abasIgnoradas = 0;
+                
+                workbook.SheetNames.forEach((sheetName, index) => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Verificar se o cabeçalho da aba indica um jogo específico
+                    const sheetNameLower = sheetName.toLowerCase().trim();
+                    const isGameHeader = sheetNameLower.includes('bola') || 
+                                       sheetNameLower.includes('jogo') ||
+                                       sheetNameLower.includes('game') ||
+                                       /^\d+$/.test(sheetName.trim()) || // Números puros
+                                       /^bola\s*\d+$/i.test(sheetName) || // "Bola 1", "Bola 2", etc.
+                                       /^jogo\s*\d+$/i.test(sheetName) || // "Jogo 1", "Jogo 2", etc.
+                                       /^game\s*\d+$/i.test(sheetName); // "Game 1", "Game 2", etc.
+                    
+                    if (isGameHeader) {
+                        console.log(`🎯 Processando aba "${sheetName}" como jogo específico`);
+                        abasProcessadas++;
+                        
+                        // Verificar se há header na linha 1 da aba
+                        const primeiraLinha = jsonData[0];
+                        const temHeaderNaLinha1 = primeiraLinha && primeiraLinha.length > 0 && 
+                            typeof primeiraLinha[0] === 'string' && (
+                                primeiraLinha[0].toLowerCase().includes('jogo') ||
+                                primeiraLinha[0].toLowerCase().includes('bola') ||
+                                primeiraLinha[0].toLowerCase().includes('game')
+                            );
+                        
+                        if (temHeaderNaLinha1) {
+                            // CENÁRIO 2A: Múltiplas abas COM header na linha 1
+                            console.log(`📋 CENÁRIO 2A: Aba "${sheetName}" COM header na linha 1`);
+                            
+                            for (let i = 1; i < jsonData.length; i++) {
+                                const row = jsonData[i];
+                                if (row && row.length >= tamanhoMinimo) {
+                                    const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
+                                    
+                                    if (numeros.length >= tamanhoMinimo && numeros.length <= tamanhoMaximo) {
+                                        jogos.push(numeros);
+                                        console.log(`✅ Jogo ${jogos.length} da aba "${sheetName}" (${numeros.length} números) - Linha ${i + 1}:`, numeros);
+                                    }
+                                }
+                            }
+                        } else {
+                            // CENÁRIO 2B: Múltiplas abas SEM header na linha 1
+                            console.log(`📋 CENÁRIO 2B: Aba "${sheetName}" SEM header na linha 1`);
+                            
+                            for (let i = 0; i < jsonData.length; i++) {
+                                const row = jsonData[i];
+                                if (row && row.length >= tamanhoMinimo) {
+                                    const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
+                                    
+                                    if (numeros.length >= tamanhoMinimo && numeros.length <= tamanhoMaximo) {
+                                        jogos.push(numeros);
+                                        console.log(`✅ Jogo ${jogos.length} da aba "${sheetName}" (${numeros.length} números) - Linha ${i + 1}:`, numeros);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        console.log(`ℹ️ Aba "${sheetName}" ignorada - não parece ser um jogo específico`);
+                        abasIgnoradas++;
+                    }
+                });
+                
+                console.log(`📊 Resumo do processamento de abas:`);
+                console.log(`   ✅ Abas processadas: ${abasProcessadas}`);
+                console.log(`   ⏭️ Abas ignoradas: ${abasIgnoradas}`);
+                console.log(`   🎯 Total de jogos encontrados: ${jogos.length}`);
+            }
+        } else {
+            // Loteria padrão: tamanho fixo (comportamento original)
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (row && row.length >= tamanhoMinimo) {
+                    const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
+                    
+                    if (numeros.length === tamanhoMinimo) {
+                        jogos.push(numeros);
+                        // console.log(`✅ Jogo ${jogos.length} adicionado:`, numeros);
+                    }
                 }
             }
         }
+        
+        // Resumo final do processamento
+        console.log(`🎯 RESUMO FINAL DO CARREGAMENTO:`);
+        console.log(`   📊 Total de jogos carregados: ${jogos.length}`);
+        console.log(`   📋 Configuração: ${config.loteria.modalidade}`);
+        console.log(`   🎲 Tamanho mínimo: ${tamanhoMinimo} números`);
+        console.log(`   🎲 Tamanho máximo: ${tamanhoMaximo} números`);
+        console.log(`   🔢 Universo: ${minNumero}-${maxNumero}`);
+        
         if (jogos.length === 0) throw new Error('Nenhum jogo válido encontrado na planilha');
-        // console.log(`🎯 Total de jogos carregados: ${jogos.length}`);
+        
         displayJogos(jogos);
         document.getElementById('total-jogos').textContent = jogos.length;
         window.jogosAtuais = jogos;

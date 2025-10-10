@@ -68,11 +68,28 @@ function atualizarStatusBolao(loteriaNome, concurso, disponivel) {
     } catch (_) { }
 }
 
+function formatNumerosPorJogo(numerosPorJogo) {
+    if (typeof numerosPorJogo === 'number') {
+        return numerosPorJogo.toString();
+    }
+    if (typeof numerosPorJogo === 'object' && numerosPorJogo !== null) {
+        if (numerosPorJogo.minimo && numerosPorJogo.maximo) {
+            return `${numerosPorJogo.minimo}-${numerosPorJogo.maximo}`;
+        }
+        if (numerosPorJogo.multiplos_tamanhos) {
+            return `${numerosPorJogo.minimo}-${numerosPorJogo.maximo} (variável)`;
+        }
+    }
+    return numerosPorJogo?.toString() || 'N/A';
+}
+
 function criarCardLoteria(loteriaData, statusBoloes = {}) {
     const { nome, config } = loteriaData;
     const loteria = config.loteria;
     const card = document.createElement('div');
     card.className = 'loteria-card';
+    
+    const numerosFormatados = formatNumerosPorJogo(loteria.numeros_por_jogo);
     const boloesHTML = Object.entries(config.boloes).map(([id, bolao]) => {
         const status = statusBoloes[id] || 'aguardando';
         const statusText = status === 'disponivel' ? 'Resultado disponível' : 'Aguardando resultado';
@@ -90,7 +107,7 @@ function criarCardLoteria(loteriaData, statusBoloes = {}) {
                         <div class="bolao-info-item"><strong>Modalidade:</strong> ${loteria.modalidade}</div>
                         <div class="bolao-info-item"><strong>Concurso:</strong> ${bolao.concurso}</div>
                         <div class="bolao-info-item"><strong>Data:</strong> ${bolao.data_sorteio}</div>
-                        <div class="bolao-info-item"><strong>Números:</strong> ${loteria.numeros_por_jogo}</div>
+                        <div class="bolao-info-item"><strong>Números:</strong> ${numerosFormatados}</div>
                     </div>
                     <a href="./pages/bolao-template.html?loteria=${nome}&bolao=${id}" class="bolao-link" target="_blank">Acessar Bolão</a>
                 </div>
@@ -99,7 +116,7 @@ function criarCardLoteria(loteriaData, statusBoloes = {}) {
     card.innerHTML = `
                 <h3>${loteria.modalidade}</h3>
                 <div class="loteria-info">
-                    <div class="info-item"><span class="info-label">Números por jogo:</span><span class="info-value">${loteria.numeros_por_jogo}</span></div>
+                    <div class="info-item"><span class="info-label">Números por jogo:</span><span class="info-value">${numerosFormatados}</span></div>
                     <div class="info-item"><span class="info-label">Range de acertos:</span><span class="info-value">${loteria.range_acertos.minimo}-${loteria.range_acertos.maximo}</span></div>
                     <div class="info-item"><span class="info-label">Total de bolões:</span><span class="info-value">${Object.keys(config.boloes).length}</span></div>
                 </div>

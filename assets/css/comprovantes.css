@@ -16,8 +16,12 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
 .comprovantes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
 .comprovante-card { background: #f8f9fa; border-radius: 10px; padding: 20px; border: 2px solid #e9ecef; transition: all 0.3s ease; text-align: center; }
 .comprovante-card:hover { border-color: #667eea; transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+.comprovante-card.pdf-unified { border-color: #28a745; background: linear-gradient(135deg, #f8fff8, #e8f5e8); }
+.comprovante-card.pdf-unified:hover { border-color: #1e7e34; }
 .comprovante-icon { font-size: 3em; margin-bottom: 15px; color: #dc3545; }
+.comprovante-card.pdf-unified .comprovante-icon { color: #28a745; }
 .comprovante-title { font-size: 1.2em; font-weight: bold; color: #333; margin-bottom: 10px; }
+.comprovante-subtitle { font-size: 0.9em; color: #666; margin-bottom: 15px; font-style: italic; }
 .comprovante-actions { display: flex; gap: 10px; justify-content: center; }
 .btn { padding: 10px 20px; border: none; border-radius: 20px; text-decoration: none; font-weight: bold; transition: all 0.3s ease; cursor: pointer; font-size: 0.9em; }
 .btn-primary { background: #667eea; color: white; }

@@ -506,6 +506,9 @@
     </div>
   </div>
 
+  <!-- Biblioteca XLSX para processamento de planilhas Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
     import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
@@ -860,8 +863,18 @@
     async function getBoloesByLoteria(loteriaId) {
       try {
         debugLog('FIRESTORE', `Buscando bolões para loteria ${loteriaId}`);
-        const boloes = await firestoreAdmin.getBoloesByLoteria(loteriaId);
-        return boloes;
+        
+        // Usar cache com SWR para bolões
+        const { cacheKeys, swr } = await import('./assets/js/data/local-cache.js');
+        const { retry } = await import('./assets/js/data/retry.js');
+        
+        const { staleData, refresh } = await swr(
+          cacheKeys.boloesByLoteria(loteriaId),
+          () => retry(() => firestoreAdmin.getBoloesByLoteria(loteriaId), { attempts: 3, baseDelayMs: 200, factor: 2, jitter: 0.3, timeoutMs: 5000 }),
+          5*60*1000 // 5 minutos de cache
+        );
+        
+        return staleData || await refresh;
       } catch (error) {
         debugLog('ERROR', `Erro ao buscar bolões para ${loteriaId}`, error);
         return [];

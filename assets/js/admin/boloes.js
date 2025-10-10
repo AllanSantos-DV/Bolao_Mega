@@ -3,10 +3,12 @@
 import { Bolao } from './models.js';
 import { FirestoreAdmin } from './firestore-admin.js';
 import { modalManager } from '../ui/modals.js';
+import { FileUploadManager } from './file-upload.js';
 
 export class BoloesManager {
   constructor(firestoreAdmin) {
     this.firestoreAdmin = firestoreAdmin;
+    this.fileUploadManager = new FileUploadManager();
   }
 
   // Modal para criar bolão
@@ -134,13 +136,32 @@ export class BoloesManager {
       const planilhaFile = formData.get('planilha');
       const comprovanteFile = formData.get('comprovante');
       
-      // TODO: Implementar upload de arquivos
-      // Por enquanto, criar bolão sem planilha
+      // Processar planilha de jogos
+      if (planilhaFile && planilhaFile.size > 0) {
+        try {
+          console.log('📊 Processando planilha:', planilhaFile.name);
+          const jogosRaw = await this.fileUploadManager.readSpreadsheet(planilhaFile);
+          const jogosProcessados = this.fileUploadManager.processJogosForFirestore(jogosRaw);
+          bolaoData.jogos = jogosProcessados;
+          console.log('✅ Jogos processados:', jogosProcessados);
+        } catch (error) {
+          console.error('❌ Erro ao processar planilha:', error);
+          throw new Error(`Erro ao processar planilha: ${error.message}`);
+        }
+      } else {
+        throw new Error('Planilha de jogos é obrigatória');
+      }
+      
       const bolao = new Bolao(bolaoData);
-      await this.firestoreAdmin.createBolao(bolao);
+      const bolaoId = await this.firestoreAdmin.createBolao(bolao);
       
       modalManager.showSuccess('Bolão criado com sucesso!');
       modalManager.closeModal();
+      
+      // Recarregar lista de bolões para mostrar o novo bolão
+      if (typeof window.loadLoteriasWithBoloes === 'function') {
+        await window.loadLoteriasWithBoloes();
+      }
       
     } catch (error) {
       console.error('Erro ao salvar bolão:', error);

@@ -1,0 +1,28 @@
+{
+    "loteria": {
+        "modalidade": "Quina",
+        "numeros_por_jogo": 5,
+        "universo": {
+            "minimo": 1,
+            "maximo": 80
+        },
+        "range_acertos": {
+            "minimo": 2,
+            "maximo": 5
+        },
+        "acertos": {}
+    },
+    "boloes": {
+        "bolao-40": {
+            "concurso": "6849",
+            "resultado": [],
+            "planilha": "bolao_quina_40_jogos.xlsx",
+            "cotas": 12,
+            "nome": "Bolao 40 Jogos",
+            "data_sorteio": "10/10/2025",
+            "comprovantes": {
+                "pasta": "comprovantes/quina/bolao-40"
+            }
+        }
+    }
+}

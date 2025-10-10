@@ -68,25 +68,41 @@ function displayJogos(jogos) {
     container.style.display = 'grid';
 }
 
-function calcularAcertos(jogos, numerosSorteados) {
+function calcularAcertos(jogos, numerosSorteados, config) {
     if (!numerosSorteados) return {};
-    const acertosPorFaixa = { 15:0, 14:0, 13:0, 12:0, 11:0 };
+    
+    // Obter configurações da loteria
+    const rangeAcertos = config.loteria.range_acertos;
+    const minimoAcertos = rangeAcertos?.minimo || 11;
+    const maximoAcertos = rangeAcertos?.maximo || 15;
+    
+    const acertosPorFaixa = {};
+    for (let i = minimoAcertos; i <= maximoAcertos; i++) {
+        acertosPorFaixa[i] = 0;
+    }
+    
     jogos.forEach(jogo => {
         const acertos = jogo.filter(n => numerosSorteados.includes(n)).length;
-        if (acertos >= 11 && acertos <= 15) acertosPorFaixa[acertos] = (acertosPorFaixa[acertos] || 0) + 1;
+        if (acertos >= minimoAcertos && acertos <= maximoAcertos) {
+            acertosPorFaixa[acertos] = (acertosPorFaixa[acertos] || 0) + 1;
+        }
     });
-    displayAcertos(acertosPorFaixa);
+    displayAcertos(acertosPorFaixa, config);
     return acertosPorFaixa;
 }
 
-function displayAcertos(acertosPorFaixa) {
+function displayAcertos(acertosPorFaixa, config) {
     const container = document.getElementById('acertos-grid');
     const section = document.getElementById('acertos-section');
     const title = section.querySelector('h3');
     
     container.innerHTML = '';
     
-    // Filtrar apenas faixas com acertos válidos (11-15)
+    // Obter configurações da loteria para mensagem dinâmica
+    const rangeAcertos = config.loteria.range_acertos;
+    const minimoAcertos = rangeAcertos?.minimo || 11;
+    
+    // Filtrar apenas faixas com acertos válidos
     const acertosValidos = Object.entries(acertosPorFaixa)
         .filter(([, count]) => count > 0)
         .sort((a, b) => parseInt(b[0]) - parseInt(a[0]));
@@ -94,7 +110,7 @@ function displayAcertos(acertosPorFaixa) {
     if (acertosValidos.length === 0) {
         // Não há acertos válidos - mostrar mensagem diferente
         title.textContent = '😔 Nenhum Cartão Premiado';
-        container.innerHTML = '<div class="no-acertos-message">Nenhum cartão atingiu 11 ou mais acertos</div>';
+        container.innerHTML = `<div class="no-acertos-message">Nenhum cartão atingiu ${minimoAcertos} ou mais acertos</div>`;
         section.style.display = 'block';
         return;
     }
@@ -132,8 +148,13 @@ function filtrarJogosPorAcertos(faixaAcertos) {
     });
 }
 
-function destacarAcertosNosJogos(jogos, numerosSorteados) {
+function destacarAcertosNosJogos(jogos, numerosSorteados, config) {
     const jogosItems = document.querySelectorAll('.jogo-item');
+    
+    // Obter configurações da loteria para cor dinâmica
+    const rangeAcertos = config.loteria.range_acertos;
+    const minimoAcertos = rangeAcertos?.minimo || 11;
+    
     jogosItems.forEach((item, index) => {
         const jogo = jogos[index];
         const numerosDiv = item.querySelector('.numeros');
@@ -144,7 +165,7 @@ function destacarAcertosNosJogos(jogos, numerosSorteados) {
             if (numerosSorteados.includes(jogo[i])) numDiv.classList.add('numero-acertado');
         });
         acertosDiv.textContent = `${acertos} acertos`;
-        acertosDiv.style.color = acertos >= 11 ? '#28a745' : '#dc3545';
+        acertosDiv.style.color = acertos >= minimoAcertos ? '#28a745' : '#dc3545';
         item.onclick = () => selecionarJogo(index, jogo, numerosSorteados);
     });
 }
@@ -257,16 +278,29 @@ function premiacaoToMap(premiacao) {
     return map;
 }
 
-function renderGanhos(acertosPorFaixa, premiacaoMap, totalCotas) {
+function renderGanhos(acertosPorFaixa, premiacaoMap, totalCotas, config) {
     try {
         if (!acertosPorFaixa || !premiacaoMap) return;
         const sec = document.getElementById('ganhos-section');
         const grid = document.getElementById('ganhos-grid');
         const totalEl = document.getElementById('ganhos-total');
         if (!sec || !grid || !totalEl) return;
+        
+        // Obter configurações da loteria para faixas dinâmicas
+        const rangeAcertos = config.loteria.range_acertos;
+        const minimoAcertos = rangeAcertos?.minimo || 11;
+        const maximoAcertos = rangeAcertos?.maximo || 15;
+        
         let total = 0;
         const rows = [];
-        [15,14,13,12,11].forEach(faixa => {
+        
+        // Criar array de faixas em ordem decrescente
+        const faixas = [];
+        for (let i = maximoAcertos; i >= minimoAcertos; i--) {
+            faixas.push(i);
+        }
+        
+        faixas.forEach(faixa => {
             const qtd = acertosPorFaixa[faixa] || 0;
             if (qtd === 0) return; // só mostra faixas com acertos
             const valorFaixa = premiacaoMap[faixa] || 0;
@@ -282,7 +316,7 @@ function renderGanhos(acertosPorFaixa, premiacaoMap, totalCotas) {
     } catch (_) {}
 }
 
-async function loadJogos(bolaoConfig) {
+async function loadJogos(bolaoConfig, config) {
     try {
         const planilhaUrl = `../loterias/${window.LOTERIA}/${encodeURIComponent(bolaoConfig.planilha)}?v=${window.VERSION}`;
         console.log(`📊 Carregando planilha: ${planilhaUrl}`);
@@ -293,12 +327,19 @@ async function loadJogos(bolaoConfig) {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        // Obter configurações da loteria
+        const numerosPorJogo = config.loteria.numeros_por_jogo || 15;
+        const universo = config.loteria.universo;
+        const minNumero = universo?.minimo || 1;
+        const maxNumero = universo?.maximo || 25;
+        
         const jogos = [];
         for (let i = 1; i < jsonData.length; i++) {
             const row = jsonData[i];
-            if (row && row.length >= 15) {
-                const numeros = row.filter(cell => typeof cell === 'number' && cell >= 1 && cell <= 25);
-                if (numeros.length === 15) {
+            if (row && row.length >= numerosPorJogo) {
+                const numeros = row.filter(cell => typeof cell === 'number' && cell >= minNumero && cell <= maxNumero);
+                if (numeros.length === numerosPorJogo) {
                     jogos.push(numeros);
                     // console.log(`✅ Jogo ${jogos.length} adicionado:`, numeros);
                 }
@@ -385,7 +426,7 @@ export async function bootstrapBolao() {
     if (!bolaoConfig) { document.querySelector('.content').innerHTML = '<div class=\"error\">Bolão não encontrado no config</div>'; return; }
     window.configAtual = config; window.bolaoConfigAtual = bolaoConfig;
     setBasicInfo(config, bolaoConfig);
-    await loadJogos(bolaoConfig);
+    await loadJogos(bolaoConfig, config);
     const cacheObj = loadFromLocalCache(loteria, bolaoConfig.concurso, 24*60*60*1000);
     let numeros = null;
     let premiacaoAtual = null;
@@ -444,8 +485,8 @@ export async function bootstrapBolao() {
     }
     if (numeros && window.jogosAtuais) {
         window.numerosSorteados = numeros;
-        const acertos = calcularAcertos(window.jogosAtuais, numeros);
-        destacarAcertosNosJogos(window.jogosAtuais, numeros);
+        const acertos = calcularAcertos(window.jogosAtuais, numeros, config);
+        destacarAcertosNosJogos(window.jogosAtuais, numeros, config);
         if (!premiacaoAtual && cacheObj && Array.isArray(cacheObj.premiacao)) premiacaoAtual = cacheObj.premiacao;
         // Merge de premiação: valores fixos do config (11-13) + API + pagosExtras (14/15) do cache
         const fixed = (config && config.loteria && config.loteria.acertos) ? config.loteria.acertos : {};
@@ -461,7 +502,7 @@ export async function bootstrapBolao() {
             if (extras[14] != null && !Number.isNaN(Number(extras[14]))) mergedMap[14] = Number(extras[14]);
             if (extras[15] != null && !Number.isNaN(Number(extras[15]))) mergedMap[15] = Number(extras[15]);
         }
-        renderGanhos(acertos, mergedMap, bolaoConfig.cotas);
+        renderGanhos(acertos, mergedMap, bolaoConfig.cotas, config);
     }
 }
 

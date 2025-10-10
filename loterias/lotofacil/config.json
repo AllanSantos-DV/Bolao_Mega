@@ -2,6 +2,10 @@
   "loteria": {
     "modalidade": "Lotofacil",
     "numeros_por_jogo": 15,
+    "universo": {
+      "minimo": 1,
+      "maximo": 25
+    },
     "range_acertos": {
       "minimo": 11,
       "maximo": 15

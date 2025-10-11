@@ -310,9 +310,148 @@ function premiacaoToMap(premiacao) {
     return map;
 }
 
+function renderCotacoesEspeciais(acertosPorFaixa, cotacoesEspeciais, totalCotas, config) {
+    try {
+        const sec = document.getElementById('ganhos-section');
+        const grid = document.getElementById('ganhos-grid');
+        const totalEl = document.getElementById('ganhos-total');
+        if (!sec || !grid || !totalEl) return;
+        
+        // Obter configurações
+        const rangeAcertos = config.loteria.range_acertos;
+        const minimoAcertos = rangeAcertos?.minimo || 15;
+        const maximoAcertos = rangeAcertos?.maximo || 15;
+        const premiacaoApenasMaximo = rangeAcertos?.premiacao_apenas_maximo === true;
+        
+        // Determinar faixas a mostrar
+        let faixas = [];
+        if (premiacaoApenasMaximo) {
+            faixas = [maximoAcertos];
+        } else {
+            for (let i = minimoAcertos; i <= maximoAcertos; i++) {
+                faixas.push(i);
+            }
+        }
+        
+        // Mostrar apenas se houver acertos
+        const temAcertos = faixas.some(faixa => (acertosPorFaixa[faixa] || 0) > 0);
+        if (!temAcertos) {
+            sec.style.display = 'none';
+            return;
+        }
+        
+        sec.style.display = 'block';
+        
+        // Criar interface de cotações especiais
+        const regras = cotacoesEspeciais.regras;
+        const cotacoesR1 = cotacoesEspeciais.cotacoes_r1;
+        const cotacoesR5 = cotacoesEspeciais.cotacoes_r5;
+        
+        let html = `
+            <div class="cotacoes-especiais">
+                <h3>🎯 ${config.loteria.modalidade} - Cotações Especiais</h3>
+                <div class="regras-info">
+                    <p><strong>📌 Como jogar:</strong></p>
+                    <p>✅ Escolha de ${regras.minimo_numeros} a ${regras.maximo_numeros} números (de ${regras.universo})</p>
+                    <p>✅ Ganha quem acertar os ${regras.ganha_acertando}</p>
+                    <p><strong>📅 Sorteios:</strong> ${regras.sorteios}</p>
+                    <p><strong>💸 Apostas:</strong> A partir de ${regras.aposta_minima}</p>
+                    <p><strong>💰 Prêmio máximo:</strong> ${regras.premio_maximo}</p>
+                </div>
+                
+                <div class="cotacoes-tabela">
+                    <h4>💵 Cotações por Aposta</h4>
+                    <div class="cotacoes-grid">
+                        <div class="cotacao-coluna">
+                            <h5>Aposta de R$1,00</h5>
+                            <div class="cotacao-item">
+                                <span class="cotacao-numeros">Números Marcados</span>
+                                <span class="cotacao-premio">Prêmio</span>
+                            </div>
+        `;
+        
+        // Adicionar cotações R$1,00
+        Object.entries(cotacoesR1).forEach(([numeros, premio]) => {
+            html += `
+                <div class="cotacao-item">
+                    <span class="cotacao-numeros">${numeros} dezenas</span>
+                    <span class="cotacao-premio">R$ ${premio.toLocaleString('pt-BR')}</span>
+                </div>
+            `;
+        });
+        
+        html += `
+                        </div>
+                        <div class="cotacao-coluna">
+                            <h5>Aposta de R$5,00</h5>
+                            <div class="cotacao-item">
+                                <span class="cotacao-numeros">Números Marcados</span>
+                                <span class="cotacao-premio">Prêmio</span>
+                            </div>
+        `;
+        
+        // Adicionar cotações R$5,00
+        Object.entries(cotacoesR5).forEach(([numeros, premio]) => {
+            html += `
+                <div class="cotacao-item">
+                    <span class="cotacao-numeros">${numeros} dezenas</span>
+                    <span class="cotacao-premio">R$ ${premio.toLocaleString('pt-BR')}</span>
+                </div>
+            `;
+        });
+        
+        html += `
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="acertos-info">
+                    <h4>🎯 Seus Acertos</h4>
+        `;
+        
+        // Mostrar acertos do usuário
+        faixas.forEach(faixa => {
+            const qtd = acertosPorFaixa[faixa] || 0;
+            if (qtd > 0) {
+                html += `
+                    <div class="acerto-item">
+                        <span class="acerto-qtd">${qtd} jogo(s)</span>
+                        <span class="acerto-desc">com ${faixa} acertos</span>
+                    </div>
+                `;
+            }
+        });
+        
+        html += `
+                </div>
+                
+                <div class="lembrete">
+                    <p><strong>📈 LEMBRETE IMPORTANTE:</strong></p>
+                    <p>Quanto maior a sua aposta, maior o prêmio.</p>
+                    <p>🚫 Mas o valor nunca passa de R$50.000 por bilhete.</p>
+                </div>
+            </div>
+        `;
+        
+        grid.innerHTML = html;
+        totalEl.style.display = 'none'; // Ocultar total para cotações especiais
+        
+    } catch (error) {
+        console.error('Erro ao renderizar cotações especiais:', error);
+    }
+}
+
 function renderGanhos(acertosPorFaixa, premiacaoMap, totalCotas, config) {
     try {
         if (!acertosPorFaixa || !premiacaoMap) return;
+        
+        // Verificar se é loteria especial com cotações próprias
+        const cotacoesEspeciais = config.loteria.cotacoes_especiais;
+        if (cotacoesEspeciais?.usar_cotacoes_proprias) {
+            renderCotacoesEspeciais(acertosPorFaixa, cotacoesEspeciais, totalCotas, config);
+            return;
+        }
+        
         const sec = document.getElementById('ganhos-section');
         const grid = document.getElementById('ganhos-grid');
         const totalEl = document.getElementById('ganhos-total');

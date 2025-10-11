@@ -2,10 +2,20 @@ import { fetchJsonWithTimeout, httpStatusHint } from './http.js';
 import { getStaticResult } from '../data/static-results.js';
 
 export async function fetchCaixaResultado(loteria, concurso) {
-    // GitHub Pages - usar API direta da Caixa
-    const url = `https://servicebus2.caixa.gov.br/portaldeloterias/api/${loteria}/${concurso}`;
+    // Mapear loterias especiais para suas loterias padrão
+    const loteriaMap = {
+        'lotinha': 'lotofacil',
+        'quininha': 'quina', 
+        'mania': 'lotomania'
+    };
     
-    console.log(`🌐 Tentando API Caixa: ${url}`);
+    // Se for loteria especial, usar a loteria padrão correspondente
+    const loteriaParaBuscar = loteriaMap[loteria] || loteria;
+    
+    // GitHub Pages - usar API direta da Caixa
+    const url = `https://servicebus2.caixa.gov.br/portaldeloterias/api/${loteriaParaBuscar}/${concurso}`;
+    
+    console.log(`🌐 Tentando API Caixa: ${url}${loteriaParaBuscar !== loteria ? ` (${loteria} → ${loteriaParaBuscar})` : ''}`);
     const result = await fetchJsonWithTimeout(url);
     
     if (result.ok && result.data) {
@@ -20,9 +30,9 @@ export async function fetchCaixaResultado(loteria, concurso) {
     });
     
     // Fallback: usar dados estáticos (GitHub Pages)
-    const staticData = getStaticResult(loteria, concurso);
+    const staticData = getStaticResult(loteriaParaBuscar, concurso);
     if (staticData) {
-        console.log(`📄 Usando dados estáticos para ${loteria}/${concurso}`);
+        console.log(`📄 Usando dados estáticos para ${loteriaParaBuscar}/${concurso}${loteriaParaBuscar !== loteria ? ` (${loteria})` : ''}`);
         return { ok: true, data: staticData };
     }
     

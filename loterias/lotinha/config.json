@@ -88,6 +88,28 @@
             "comprovantes": {
                 "pasta": "comprovantes/lotinha/bolao-lotinha-2"
             }
+        },
+        "bolao-lotinha-3": {
+            "concurso": "3510",
+            "resultado": [],
+            "planilha": "lotinha 9 jogos---11-10.xlsx",
+            "cotas": 3,
+            "nome": "Bolao Lotinha 9",
+            "data_sorteio": "11/10/2025",
+            "comprovantes": {
+                "pasta": "comprovantes/lotinha/bolao-11-10"
+            }
+        },
+        "bolao-lotinha-4": {
+            "concurso": "3510",
+            "resultado": [],
+            "planilha": "jogos_base_21_17_21---11-10.xlsx",
+            "cotas": 3,
+            "nome": "Bolao Lotinha 21",
+            "data_sorteio": "11/10/2025",
+            "comprovantes": {
+                "pasta": "comprovantes/lotinha/bolao-lotinha-2"
+            }
         }
     }
 }

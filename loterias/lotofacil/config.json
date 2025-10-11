@@ -137,6 +137,28 @@
       "comprovantes": {
         "pasta": "comprovantes/lotofacil/bolao-10-2"
       }
+    },
+    "Bolao-4-11-10": {
+      "concurso": "3510",
+      "resultado": [],
+      "planilha": "lotofacil 11-10.xlsx",
+      "cotas": 5,
+      "nome": "Bolao 4 Jogos",
+      "data_sorteio": "11/10/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-4-11-10"
+      }
+    },
+    "Bolao-13-11-10": {
+      "concurso": "3510",
+      "resultado": [],
+      "planilha": "jogos 11-10-loto.xlsx",
+      "cotas": 1,
+      "nome": "Bolao 13 Jogos",
+      "data_sorteio": "11/10/2025",
+      "comprovantes": {
+        "pasta": "comprovantes/lotofacil/bolao-13-11-10"
+      }
     }
   }
 }

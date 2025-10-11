@@ -4,8 +4,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Função para verificar se usuário é admin
     function isAdmin() {
-      return request.auth != null && 
-             request.auth.token.email in ['allannascimentodossantos@gmail.com'];
+      // Qualquer usuário autenticado no Firebase é considerado admin
+      return request.auth != null;
     }
 
     // Função para verificar se usuário está autenticado
@@ -19,10 +19,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Loterias (leitura pública, escrita apenas admin)
+    // Loterias (leitura pública, escrita apenas admin com validação)
     match /loterias/{loteria} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() &&
+        request.resource.data.keys().hasAll(['nome', 'created_at', 'updated_at']) &&
+        request.resource.data.nome is string &&
+        request.resource.data.nome.size() >= 3 &&
+        request.resource.data.nome.size() <= 100;
     }
     
     // Loterias (coleção completa)
@@ -48,10 +52,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Bolões (leitura pública, escrita apenas admin)
+    // Bolões (leitura pública, escrita apenas admin com validação)
     match /boloes/{bolao} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() &&
+        request.resource.data.keys().hasAll(['nome', 'loteria_id', 'created_at', 'updated_at']) &&
+        request.resource.data.nome is string &&
+        request.resource.data.nome.size() >= 3 &&
+        request.resource.data.nome.size() <= 100 &&
+        request.resource.data.loteria_id is string &&
+        request.resource.data.loteria_id.size() > 0;
     }
     
     // Bolões (coleção completa)
@@ -60,9 +70,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Participantes (somente admins podem ler/escrever — PII protegida)
+    // Participantes (somente admins podem ler/escrever — PII protegida com validação)
     match /participantes/{participante} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if isAdmin() &&
+        request.resource.data.keys().hasAll(['nome', 'created_at', 'updated_at']) &&
+        request.resource.data.nome is string &&
+        request.resource.data.nome.size() >= 3 &&
+        request.resource.data.nome.size() <= 100 &&
+        (!('telefone' in request.resource.data) || request.resource.data.telefone is string) &&
+        (!('chavepix' in request.resource.data) || request.resource.data.chavepix is string);
     }
     
     // Participantes (coleção completa)

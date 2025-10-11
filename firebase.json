@@ -26,7 +26,8 @@
       "**/app_antigo/**",
       "**/.agente/**",
       "**/.cursor/**",
-      "**/.vscode/**"
+      "**/.vscode/**",
+      "**/firebase-config.js"
     ],
     "rewrites": [
       { "source": "/login", "destination": "/pages/login.html" },

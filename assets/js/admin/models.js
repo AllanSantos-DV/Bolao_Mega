@@ -12,21 +12,21 @@ export class Participante {
   }
 
   validate() {
-    const errors = [];
+    const validation = ValidationUtils.validateParticipanteData({
+      nome: this.nome,
+      telefone: this.telefone,
+      chavepix: this.chavepix
+    });
 
-    // Nome obrigatório e mínimo 3 caracteres
-    if (!this.nome || this.nome.trim().length < 3) {
-      errors.push('Nome deve ter pelo menos 3 caracteres');
-    }
-
-    // Telefone obrigatório se não tiver responsável
+    // Verificação adicional específica do modelo
     if (!this.participante_responsavel && (!this.telefone || this.telefone.trim().length === 0)) {
-      errors.push('Telefone é obrigatório quando não há participante responsável');
+      validation.errors.push('Telefone é obrigatório quando não há participante responsável');
+      validation.valid = false;
     }
 
     return {
-      isValid: errors.length === 0,
-      errors
+      isValid: validation.valid,
+      errors: validation.errors
     };
   }
 
@@ -64,20 +64,23 @@ export class Loteria {
   }
 
   validate() {
-    const errors = [];
+    const validation = ValidationUtils.validateLoteriaData({
+      nome: this.nome,
+      modalidade: this.modalidade,
+      numeros_por_jogo: this.numeros_por_jogo,
+      valor_volante: this.valor_volante,
+      valor_variavel: this.valor_variavel
+    });
 
-    if (!this.nome || this.nome.trim().length === 0) {
-      errors.push('Nome da loteria é obrigatório');
-    }
-
-    // Se não for valor variável, o valor_volante é obrigatório
+    // Verificação adicional específica do modelo
     if (!this.valor_variavel && (!this.valor_volante || this.valor_volante <= 0)) {
-      errors.push('Valor do volante deve ser maior que zero');
+      validation.errors.push('Valor do volante deve ser maior que zero');
+      validation.valid = false;
     }
 
     return {
-      isValid: errors.length === 0,
-      errors
+      isValid: validation.valid,
+      errors: validation.errors
     };
   }
 
@@ -106,14 +109,13 @@ export class Loteria {
 export class Bolao {
   constructor(data = {}) {
     this.id = data.id || null;
-    this.loteria_id = data.loteria_id || '';
     this.nome = data.nome || '';
+    this.loteria_id = data.loteria_id || '';
+    this.valor_volante = data.valor_volante || 0;
     this.participantes = data.participantes || [];
     this.cotas = data.cotas || {};
-    this.jogos = data.jogos || {
-      total_jogos: 0,
-      jogos: []
-    };
+    this.resultado = data.resultado || [];
+    this.jogos = data.jogos || { total_jogos: 0, jogos: [] };
     this.concursos_alvo = data.concursos_alvo || [];
     this.comprovante_url = data.comprovante_url || '';
     this.data_sorteio = data.data_sorteio || '';
@@ -123,31 +125,15 @@ export class Bolao {
   }
 
   validate() {
-    const errors = [];
-
-    if (!this.loteria_id) {
-      errors.push('Loteria é obrigatória');
-    }
-
-    if (!this.nome || this.nome.trim().length === 0) {
-      errors.push('Nome do bolão é obrigatório');
-    }
-
-    if (!this.participantes || this.participantes.length === 0) {
-      errors.push('Pelo menos um participante é obrigatório');
-    }
-
-    if (!this.jogos || !this.jogos.jogos || this.jogos.jogos.length === 0) {
-      errors.push('Pelo menos um jogo é obrigatório');
-    }
-
-    if (!this.concursos_alvo || this.concursos_alvo.length === 0) {
-      errors.push('Pelo menos um concurso alvo é obrigatório');
-    }
+    const validation = ValidationUtils.validateBolaoData({
+      nome: this.nome,
+      loteria_id: this.loteria_id,
+      participantes: this.participantes
+    });
 
     return {
-      isValid: errors.length === 0,
-      errors
+      isValid: validation.valid,
+      errors: validation.errors
     };
   }
 

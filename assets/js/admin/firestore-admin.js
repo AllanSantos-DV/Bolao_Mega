@@ -33,17 +33,12 @@ export class FirestoreAdmin {
     const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js');
     const auth = getAuth();
     const user = auth.currentUser;
-    
+
     if (!user) {
       throw new Error('Usuário não autenticado');
     }
-    
-    // Verificar se o email está na lista de admins
-    const adminEmails = ['allannascimentodossantos@gmail.com'];
-    if (!adminEmails.includes(user.email)) {
-      throw new Error('Acesso negado: usuário não é admin');
-    }
-    
+
+    // Qualquer usuário autenticado no Firebase é considerado admin
     console.log('Permissões de admin verificadas para:', user.email);
     return true;
   }

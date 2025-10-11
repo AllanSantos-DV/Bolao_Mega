@@ -130,12 +130,13 @@ export class BoloesManager {
         participantes: participantesSelecionados,
         cotas: {},
         concursos_alvo: this.generateConcursosAlvo(concursoInicial, concursoFinal, selectedDates),
-        comprovante_url: ''
+        comprovante_url: '',
+        jogos: { total_jogos: 0, jogos: [] } // Inicializar jogos vazio
       };
-      
+
       const planilhaFile = formData.get('planilha');
       const comprovanteFile = formData.get('comprovante');
-      
+
       // Processar planilha de jogos
       if (planilhaFile && planilhaFile.size > 0) {
         try {
@@ -151,7 +152,7 @@ export class BoloesManager {
       } else {
         throw new Error('Planilha de jogos é obrigatória');
       }
-      
+
       const bolao = new Bolao(bolaoData);
       const bolaoId = await this.firestoreAdmin.createBolao(bolao);
       

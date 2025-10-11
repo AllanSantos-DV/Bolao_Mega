@@ -230,17 +230,11 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+    import { ensureFirebaseConfigAvailable } from '../assets/js/firebase/config-loader.js';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-Q2-wknTpBAg1FKKIFwmKzMGpdZfS378",
-      authDomain: "mega-bolao-2025.firebaseapp.com",
-      projectId: "mega-bolao-2025",
-      storageBucket: "mega-bolao-2025.firebasestorage.app",
-      messagingSenderId: "607263101053",
-      appId: "1:607263101053:web:e6d228034b4643a6412114"
-    };
-
-    const app = initializeApp(firebaseConfig);
+    // Carregar configuração Firebase e inicializar
+    await ensureFirebaseConfigAvailable();
+    const app = initializeApp(window.firebaseConfig);
     const auth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
 

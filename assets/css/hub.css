@@ -183,6 +183,78 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Debug Panel Styles */
+.debug-toggle {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+  background: #1a1a2e;
+  color: #00ff88;
+  border: 1px solid #00ff88;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.debug-toggle:hover {
+  opacity: 1;
+  background: #00ff88;
+  color: #1a1a2e;
+}
+
+.debug-panel {
+  position: fixed;
+  top: 50px;
+  right: 10px;
+  width: 400px;
+  max-height: 300px;
+  background: rgba(26, 26, 46, 0.95);
+  border: 1px solid #00ff88;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #00ff88;
+  overflow-y: auto;
+  z-index: 9998;
+  display: none;
+}
+
+.debug-panel strong {
+  color: #ffffff;
+  border-bottom: 1px solid #00ff88;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.debug-panel div:last-child {
+  margin-top: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* Estilos para elementos do hub */
+.user-info {
+  display: none;
+}
+
+#lotteries-container {
+  display: none;
+}
+
+#lotteries-empty {
+  display: none;
+}
+
+#cache-results {
+  margin-top: 16px;
+}
+
 .empty {
   color: #bdbdbd;
   border: 1px dashed rgba(255,255,255,0.2);

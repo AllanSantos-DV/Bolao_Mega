@@ -447,8 +447,8 @@
     </div>
 
     <div class="card">
-      <h3>📊 Loterias e Bolões</h3>
-        <div id="loterias-boloes-container">
+      <h3>📊 Bolões</h3>
+      <div id="loterias-boloes-container">
         <div id="lotteries-loading" class="loading" aria-live="polite">Carregando loterias...</div>
         <div id="lotteries-container" role="region" aria-label="Lista de loterias"></div>
         <div id="lotteries-empty" class="empty" role="status" aria-live="polite">
@@ -522,6 +522,10 @@
 
     // Funções globais para compatibilidade com eventos onclick
     window.hubManager = hubManager;
+    window.openAdminModal = (section) => hubManager?.adminManager?.openAdminModal(section);
+    window.listLoterias = () => hubManager?.adminManager?.listLoterias?.();
+    window.listParticipantes = () => hubManager?.adminManager?.listParticipantes?.();
+    window.closeModal = () => window.modalManager?.close?.();
     </script>
 </body>
 </html>

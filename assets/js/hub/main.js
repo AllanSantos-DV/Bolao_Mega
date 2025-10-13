@@ -11,6 +11,23 @@ export class HubManager {
     this.isInitialized = false;
   }
 
+  resolveLoteriaTitle(loteriaId, config) {
+    const rawName = (config?.loteria?.nome) || (config?.loteria?.modalidade) || '';
+    const looksLikeId = typeof rawName === 'string' && /^[A-Za-z0-9_-]{12,}$/.test(rawName);
+    if (rawName && !looksLikeId) return rawName;
+    const key = String(loteriaId || '').toLowerCase();
+    switch (key) {
+      case 'lotofacil': return 'Lotofácil';
+      case 'quina': return 'Quina';
+      case 'lotomania': return 'Lotomania';
+      case 'lotinha': return 'Lotinha';
+      case 'quininha': return 'Quininha';
+      case 'super-5':
+      case 'super5': return 'Super-5';
+      default: return 'Loteria';
+    }
+  }
+
   async initialize() {
     if (this.isInitialized) return;
 
@@ -65,6 +82,8 @@ export class HubManager {
 
       this.firestoreAdmin = new FirestoreAdmin(db);
       this.adminManager = new AdminManager(this.firestoreAdmin);
+      // Expor modalManager globalmente
+      window.modalManager = modalManager;
 
       // Configurar autenticação
       this.setupAuthListener(auth);
@@ -106,6 +125,9 @@ export class HubManager {
       await this.updateStats();
       // Carregar loterias com bolões
       await this.loadLoteriasWithBoloes();
+      // Atualizar status de cache
+      const cacheStatus = document.getElementById('cache-status');
+      if (cacheStatus) cacheStatus.textContent = 'Pronto';
     } catch (error) {
       // Silenciar erros para não poluir console
     }
@@ -123,17 +145,63 @@ export class HubManager {
     try {
       const { listLoteriasFromDB, getLoteriaConfigFromDB } = await import('../data/firestore.js');
       const loterias = await listLoteriasFromDB();
-      const found = [];
+      const totalRegistered = Array.isArray(loterias) ? loterias.length : 0;
+      // Badge no card de ações sempre reflete cadastradas na coleção
+      const lotBadge = document.getElementById('count-loterias');
+      if (lotBadge) lotBadge.textContent = totalRegistered > 0 ? `(${totalRegistered})` : '';
 
-      for (const loteria of loterias) {
-        const config = await getLoteriaConfigFromDB(loteria.id);
-        if (config) {
-          found.push({ nome: loteria.id, config });
+      // Mapa de configs de loterias (para título/modalidade)
+      const loteriasMap = {};
+      for (const l of loterias) {
+        try {
+          loteriasMap[l.id] = await getLoteriaConfigFromDB(l.id);
+        } catch (_) {
+          loteriasMap[l.id] = null;
         }
+      }
+
+      // Buscar todos os bolões e agrupar por loteria
+      const allBoloes = await this.firestoreAdmin.getAllBoloes();
+      const groupByLoteria = new Map();
+      for (const b of (allBoloes || [])) {
+        const lotId = b?.loteria_id || 'desconhecida';
+        if (!groupByLoteria.has(lotId)) groupByLoteria.set(lotId, []);
+        groupByLoteria.get(lotId).push(b);
+      }
+
+      const found = [];
+      for (const [lotId, boloesArr] of groupByLoteria.entries()) {
+        if (!Array.isArray(boloesArr) || boloesArr.length === 0) continue;
+        // Adaptar para formato esperado por buildLoteriaCard
+        const boloesObj = {};
+        for (const b of boloesArr) {
+          const pid = b?.id || `${lotId}-${Math.random().toString(36).slice(2,7)}`;
+          boloesObj[pid] = {
+            nome: b?.nome || pid,
+            participantes: Array.isArray(b?.participantes) ? b.participantes : [],
+            concursos_alvo: Array.isArray(b?.concursos_alvo) ? b.concursos_alvo : [],
+            jogos: b?.jogos || { total_jogos: b?.agg?.total_jogos || 0 }
+          };
+        }
+        const cfg = loteriasMap[lotId];
+        found.push({ nome: lotId, config: { ...(cfg || {}), loteria: cfg?.loteria || { modalidade: lotId }, boloes: boloesObj } });
       }
 
       if (found.length === 0) {
         if (empty) empty.classList.remove('hidden');
+        // Zerar/ocultar contadores quando não há dados
+        const totalLotteries = document.getElementById('total-lotteries');
+        const totalBoloes = document.getElementById('total-boloes');
+        if (totalLotteries) {
+          totalLotteries.textContent = String(totalRegistered);
+          const item = totalLotteries.closest('.stat-item');
+          if (item) item.style.display = totalRegistered > 0 ? '' : 'none';
+        }
+        if (totalBoloes) {
+          totalBoloes.textContent = '-';
+          const item = totalBoloes.closest('.stat-item');
+          if (item) item.style.display = 'none';
+        }
         return;
       }
 
@@ -144,6 +212,22 @@ export class HubManager {
         });
         container.classList.remove('hidden');
       }
+
+      // Atualizar totais
+      const totalLotteries = document.getElementById('total-lotteries');
+      const totalBoloes = document.getElementById('total-boloes');
+      if (totalLotteries) {
+        totalLotteries.textContent = String(totalRegistered);
+        const item = totalLotteries.closest('.stat-item');
+        if (item) item.style.display = totalRegistered > 0 ? '' : 'none';
+      }
+      if (totalBoloes) {
+        const bolaoCount = (allBoloes || []).length;
+        totalBoloes.textContent = String(bolaoCount);
+        const item = totalBoloes.closest('.stat-item');
+        if (item) item.style.display = bolaoCount > 0 ? '' : 'none';
+      }
+
 
     } catch (error) {
       if (empty) empty.classList.remove('hidden');
@@ -157,8 +241,23 @@ export class HubManager {
     const card = document.createElement('div');
     card.className = 'card';
 
-    const boloes = Object.entries(config.boloes || {}).map(([id, bolao]) => `
-      <div class="bolao-card">
+    const header = document.createElement('div');
+    header.className = 'loteria-header';
+    const loteriaTitle = this.resolveLoteriaTitle(nome, config);
+    header.innerHTML = `
+      <h3 class="loteria-title">${loteriaTitle}</h3>
+      <div class="loteria-stats">
+        <span>${Object.keys(config.boloes || {}).length} bolão(ões)</span>
+      </div>
+    `;
+
+    const grid = document.createElement('div');
+    grid.className = 'boloes-grid';
+
+    Object.entries(config.boloes || {}).forEach(([id, bolao]) => {
+      const sub = document.createElement('div');
+      sub.className = 'bolao-card';
+      sub.innerHTML = `
         <h4>${bolao.nome || id}</h4>
         <div class="bolao-meta">
           ${bolao.jogos?.total_jogos || 0} jogos •
@@ -170,14 +269,12 @@ export class HubManager {
           <button class="btn btn-secondary" onclick="hubManager.viewBolao('${nome}', '${id}')">👁️ Visualizar</button>
           <button class="btn btn-secondary" onclick="hubManager.editBolao('${nome}', '${id}')">✏️ Editar</button>
         </div>
-      </div>
-    `).join('');
+      `;
+      grid.appendChild(sub);
+    });
 
-    card.innerHTML = `
-      <h3>${config.loteria?.modalidade || nome}</h3>
-      ${boloes || '<div class="error">Nenhum bolão configurado</div>'}
-    `;
-
+    card.appendChild(header);
+    card.appendChild(grid);
     return card;
   }
 

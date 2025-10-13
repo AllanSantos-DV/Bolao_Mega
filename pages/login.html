@@ -225,22 +225,90 @@
     <div class="loading" id="loading">
       <p>Carregando...</p>
     </div>
+    
+    <div style="margin-top:16px">
+      <button class="btn btn-secondary" id="clear-storage-btn">Limpar sessão e cache</button>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+    import { getAuth, setPersistence, browserSessionPersistence, indexedDBLocalPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
     import { ensureFirebaseConfigAvailable } from '../assets/js/firebase/config-loader.js';
 
     // Carregar configuração Firebase e inicializar
     await ensureFirebaseConfigAvailable();
     const app = initializeApp(window.firebaseConfig);
     const auth = getAuth(app);
+    try {
+      // Persistência por sessão (evita travas de estado entre abas), fallback para IndexedDB
+      await setPersistence(auth, browserSessionPersistence);
+    } catch (e) {
+      try {
+        await setPersistence(auth, indexedDBLocalPersistence);
+      } catch {}
+    }
     const googleProvider = new GoogleAuthProvider();
+    // Força seleção de conta e melhora UX
+    try { googleProvider.setCustomParameters({ prompt: 'select_account' }); } catch {}
+    try { auth.useDeviceLanguage(); } catch {}
 
     const loginForm = document.getElementById('login-form');
     const googleBtn = document.getElementById('google-btn');
     const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const clearStorageBtn = document.getElementById('clear-storage-btn');
+    async function clearAllAppData() {
+      try {
+        setLoading(true);
+        hideMessages();
+
+        // 1) Sign-out (se houver)
+        try { await auth.signOut(); } catch {}
+
+        // 2) localStorage / sessionStorage
+        try { localStorage.clear(); } catch {}
+        try { sessionStorage.clear(); } catch {}
+
+        // 3) Cookies (escopo atual)
+        try {
+          const cookies = document.cookie.split(';');
+          for (const c of cookies) {
+            const eqPos = c.indexOf('=');
+            const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim();
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+          }
+        } catch {}
+
+        // 4) Cache API
+        try {
+          if ('caches' in window) {
+            const names = await caches.keys();
+            await Promise.all(names.map(n => caches.delete(n)));
+          }
+        } catch {}
+
+        // 5) IndexedDB (apaga bancos comuns do Firebase/Auth)
+        try {
+          const dbs = await (indexedDB?.databases?.() || []);
+          for (const db of dbs) {
+            if (db?.name) {
+              try { indexedDB.deleteDatabase(db.name); } catch {}
+            }
+          }
+        } catch {}
+
+        showSuccess('Sessão e cache limpos. Recarregando...');
+        setTimeout(() => window.location.reload(), 600);
+      } catch (e) {
+        showError('Falha ao limpar dados.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (clearStorageBtn) {
+      clearStorageBtn.addEventListener('click', clearAllAppData);
+    }
     const errorMessage = document.getElementById('error-message');
     const successMessage = document.getElementById('success-message');
     const loading = document.getElementById('loading');
@@ -310,19 +378,21 @@
     googleBtn.addEventListener('click', async () => {
       hideMessages();
       setLoading(true);
-
+      
       try {
+        // Popup primeiro (preferido)
         await signInWithPopup(auth, googleProvider);
         showSuccess('Login com Google realizado com sucesso!');
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+        setTimeout(() => { window.location.href = '/'; }, 800);
       } catch (error) {
-        console.error('Erro no login Google:', error);
-        if (error.code === 'auth/popup-closed-by-user') {
-          showError('Login cancelado.');
-        } else {
-          showError('Erro ao fazer login com Google.');
+        // Fallback para redirect se o popup falhar por qualquer motivo
+        const code = error?.code || '';
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return; // fluxo segue no getRedirectResult/onAuthStateChanged
+        } catch (redirectErr) {
+          console.error('Google login erro:', { code, error, redirectErr });
+          showError(`Erro ao fazer login com Google. (${code || 'desconhecido'})`);
         }
       } finally {
         setLoading(false);
@@ -347,6 +417,15 @@
       }
     });
 
+    // Trata retorno de redirect (se houve)
+    try {
+      const redirectResult = await getRedirectResult(auth);
+      if (redirectResult?.user) {
+        window.location.href = '/';
+      }
+    } catch {}
+
+    // Redireciona se já estiver autenticado (ex.: após redirect)
     auth.onAuthStateChanged((user) => {
       if (user) {
         window.location.href = '/';

@@ -110,6 +110,17 @@
             "comprovantes": {
                 "pasta": "comprovantes/lotinha/bolao-lotinha-2"
             }
+        },
+        "bolao-lotinha-5": {
+            "concurso": "3511",
+            "resultado": [],
+            "planilha": "Jogos 21 lotinha.xlsx",
+            "cotas": 3,
+            "nome": "Bolao Lotinha 21",
+            "data_sorteio": "13/10/2025",
+            "comprovantes": {
+                "pasta": "comprovantes/lotinha/bolao-lotinha-5"
+            }
         }
     }
 }
